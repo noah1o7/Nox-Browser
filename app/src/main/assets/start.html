@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action https:">
+  <meta name="color-scheme" content="dark">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Neuer Tab</title>
+  <style>
+    :root {
+      --text: #eceef5; --gedaempft: rgba(228, 230, 238, 0.62); --akzent: #b794ff;
+      --glas: linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.04) 60%, rgba(255,255,255,0.07));
+      --glas-rand: rgba(255, 255, 255, 0.16);
+      --glas-licht:
+        inset 0 1px 0 rgba(255, 255, 255, 0.38),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 0 20px rgba(255, 255, 255, 0.05);
+    }
+    * { box-sizing: border-box; margin: 0; }
+    html, body { height: 100%; }
+    body {
+      position: relative; overflow: hidden;
+      background: #0b0c12;
+      color: var(--text);
+      font: 15px/1.4 system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 13vh 16px 40px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ---------- Leuchtender, langsam wabernder Hintergrund ---------- */
+    .aurora { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .aurora i {
+      position: absolute; display: block; border-radius: 50%;
+      filter: blur(60px); opacity: 0.75;
+      animation: treiben 22s ease-in-out infinite alternate;
+    }
+    .aurora i:nth-child(1) { width: 46vmax; height: 46vmax; left: -18vmax; top: -16vmax; background: #6b3fd6; }
+    .aurora i:nth-child(2) { width: 38vmax; height: 38vmax; right: -18vmax; top: 18vh; background: #2c4fd8; animation-duration: 27s; animation-delay: -6s; }
+    .aurora i:nth-child(3) { width: 34vmax; height: 34vmax; left: 10vw; bottom: -14vmax; background: #b0479f; opacity: 0.55; animation-duration: 31s; animation-delay: -12s; }
+    .aurora i:nth-child(4) { width: 22vmax; height: 22vmax; left: 50vw; top: 46vh; background: #1f9e8a; opacity: 0.35; animation-duration: 25s; animation-delay: -3s; }
+    @keyframes treiben {
+      0%   { transform: translate(0, 0) scale(1); }
+      50%  { transform: translate(6vw, 4vh) scale(1.12); }
+      100% { transform: translate(-4vw, 8vh) scale(0.94); }
+    }
+    /* feines Korn, damit die Verläufe nicht streifig wirken */
+    .aurora::after {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 120%, rgba(11, 12, 18, 0.85), transparent 60%),
+                  linear-gradient(180deg, rgba(11,12,18,0) 0%, rgba(11,12,18,0.35) 100%);
+    }
+
+    main { position: relative; z-index: 1; display: contents; }
+
+    .logo {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; gap: 14px;
+      font-size: 36px; font-weight: 700; letter-spacing: -0.02em;
+      margin-bottom: 6px;
+      text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+    }
+    .logo svg { width: 44px; height: 44px; filter: drop-shadow(0 0 16px rgba(183, 148, 255, 0.55)); }
+    .uhr { position: relative; z-index: 1; color: var(--gedaempft); margin-bottom: 34px; font-variant-numeric: tabular-nums; }
+
+    /* ---------- Liquid Glass ---------- */
+    .glas {
+      position: relative;
+      background: var(--glas);
+      border: 1px solid var(--glas-rand);
+      box-shadow: var(--glas-licht), 0 12px 40px rgba(0, 0, 0, 0.35);
+      /* Weichzeichnen + leichte Lichtbrechung (SVG-Filter unten) */
+      -webkit-backdrop-filter: blur(14px) saturate(170%);
+      backdrop-filter: blur(14px) saturate(170%);
+    }
+    /* Glanzlicht, das über die Oberfläche läuft */
+    .glas::before {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+      background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.10) 45%, transparent 60%);
+      background-size: 250% 100%;
+      background-position: 120% 0;
+      transition: background-position 0.9s ease;
+    }
+    .glas:active::before, form:focus-within::before { background-position: -20% 0; }
+
+    form { position: relative; z-index: 1; width: min(620px, 100%); border-radius: 28px; }
+    input {
+      width: 100%; height: 56px; padding: 0 24px 0 54px;
+      border: 0; border-radius: 28px;
+      background: transparent; color: var(--text);
+      font: inherit; font-size: 16px; outline: none;
+      position: relative; z-index: 1;
+    }
+    input::placeholder { color: var(--gedaempft); }
+    form:focus-within {
+      border-color: rgba(200, 175, 255, 0.55);
+      box-shadow: var(--glas-licht), 0 0 0 4px rgba(183, 148, 255, 0.15), 0 0 30px rgba(183, 148, 255, 0.25), 0 12px 40px rgba(0,0,0,0.35);
+    }
+    form svg {
+      position: absolute; left: 21px; top: 50%; transform: translateY(-50%); z-index: 1;
+      width: 19px; height: 19px; fill: none; stroke: var(--gedaempft); stroke-width: 2; stroke-linecap: round;
+    }
+
+    .kacheln {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      justify-content: center; width: min(420px, 100%); margin-top: 38px;
+    }
+    .kachel {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding: 16px 6px 12px; border-radius: 20px;
+      color: var(--gedaempft); text-decoration: none; font-size: 12.5px;
+      transition: transform 0.25s cubic-bezier(.34, 1.56, .64, 1), color 0.2s;
+    }
+    .kachel:active { color: var(--text); transform: scale(0.9); transition-duration: 0.08s; }
+    .kachel .glas {
+      display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%;
+      color: var(--text); font-weight: 650; font-size: 19px;
+      box-shadow: var(--glas-licht), 0 8px 22px rgba(0, 0, 0, 0.35);
+    }
+    .kachel:active .glas { border-color: rgba(214, 195, 255, 0.4); }
+
+    /* ---------- Auftritt beim Öffnen: alles schwebt nacheinander ins Bild ---------- */
+    .aurora { animation: aufleuchten 1.2s ease-out both; }
+    .logo   { animation: hochschweben 0.7s cubic-bezier(.2,.8,.2,1) 0.10s both; }
+    .logo svg { animation: fluegelschlag 0.9s cubic-bezier(.3,1.6,.5,1) 0.15s both; }
+    .uhr    { animation: hochschweben 0.7s cubic-bezier(.2,.8,.2,1) 0.20s both; }
+    form    { animation: blase-auf 0.75s cubic-bezier(.3,1.5,.5,1) 0.28s both; }
+    /* "backwards": nach dem Auftritt hält die Animation nichts mehr fest, so wirkt der Hover-Effekt normal */
+    .kachel { animation: perle-auf 0.6s cubic-bezier(.3,1.7,.5,1) backwards; }
+    .kachel:nth-child(1) { animation-delay: 0.45s; }
+    .kachel:nth-child(2) { animation-delay: 0.51s; }
+    .kachel:nth-child(3) { animation-delay: 0.57s; }
+    .kachel:nth-child(4) { animation-delay: 0.63s; }
+    .kachel:nth-child(5) { animation-delay: 0.69s; }
+    .kachel:nth-child(6) { animation-delay: 0.75s; }
+
+    @keyframes aufleuchten { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: none; } }
+    @keyframes hochschweben { from { opacity: 0; transform: translateY(18px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+    @keyframes fluegelschlag {
+      0%   { transform: scale(0.4) rotate(-12deg); opacity: 0; }
+      50%  { transform: scaleX(0.55) scaleY(1.1); opacity: 1; }
+      100% { transform: none; opacity: 1; }
+    }
+    @keyframes blase-auf {
+      0%   { opacity: 0; transform: scale(0.12, 0.6); filter: brightness(1.8); }
+      30%  { opacity: 1; }
+      100% { opacity: 1; transform: none; filter: none; }
+    }
+    @keyframes perle-auf {
+      from { opacity: 0; transform: translateY(14px) scale(0.6); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <!-- SVG-Filter für die Lichtbrechung: verschiebt den Hintergrund leicht wellig -->
+  <svg width="0" height="0" style="position:absolute">
+    <filter id="lichtbrechung" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="7" result="rauschen"/>
+      <feGaussianBlur in="rauschen" stdDeviation="2" result="weich"/>
+      <feDisplacementMap in="SourceGraphic" in2="weich" scale="38" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
+
+  <div class="aurora"><i></i><i></i><i></i><i></i></div>
+
+  <div class="logo">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M24 14c-2-6-10-10-16-8-4 8 0 18 8 20-5 2-7 8-4 12 6 0 10-5 12-10 2 5 6 10 12 10 3-4 1-10-4-12 8-2 12-12 8-20-6-2-14 2-16 8z"
+            fill="#c9adff" fill-opacity="0.92"/>
+      <path d="M24 14v22" stroke="#0e1014" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    Nachtfalter
+  </div>
+  <div class="uhr" id="uhr"></div>
+
+  <form id="suche" class="glas">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <input id="eingabe" placeholder="Suchen oder Adresse eingeben" spellcheck="false" enterkeyhint="go" autocapitalize="off" autocomplete="off">
+  </form>
+
+  <div class="kacheln">
+    <a class="kachel" href="https://www.youtube.com"><span class="glas">Y</span>YouTube</a>
+    <a class="kachel" href="https://de.wikipedia.org"><span class="glas">W</span>Wikipedia</a>
+    <a class="kachel" href="https://www.reddit.com"><span class="glas">R</span>Reddit</a>
+    <a class="kachel" href="https://github.com"><span class="glas">G</span>GitHub</a>
+    <a class="kachel" href="https://www.tagesschau.de"><span class="glas">T</span>Tagesschau</a>
+    <a class="kachel" href="https://claude.ai"><span class="glas">C</span>Claude</a>
+  </div>
+
+  <script>
+    const suchUrl = new URLSearchParams(location.search).get('s') || 'https://duckduckgo.com/?q=%s&kae=d';
+
+    function zuUrl(t) {
+      t = t.trim();
+      if (/^https?:\/\//i.test(t)) return t;
+      if (/^localhost(:\d+)?(\/.*)?$/i.test(t)) return 'http://' + t;
+      if (!/\s/.test(t) && /^[^\s/]+\.[a-z]{2,}(:\d+)?(\/.*)?$/i.test(t)) return 'https://' + t;
+      return suchUrl.replace('%s', encodeURIComponent(t));
+    }
+
+    document.getElementById('suche').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const t = document.getElementById('eingabe').value;
+      if (t.trim()) location.href = zuUrl(t);
+    });
+
+    function uhrStellen() {
+      const jetzt = new Date();
+      document.getElementById('uhr').textContent =
+        jetzt.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }) +
+        ' · ' + jetzt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    }
+    uhrStellen();
+    setInterval(uhrStellen, 10000);
+  </script>
+</body>
+</html>

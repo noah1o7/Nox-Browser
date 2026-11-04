@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="dark">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seite nicht erreichbar</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    html, body { height: 100%; }
+    body {
+      background: #0b0c12; color: #eceef5; overflow: hidden;
+      font: 15px/1.5 system-ui, sans-serif;
+      display: grid; place-items: center; padding: 24px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wolke { position: fixed; border-radius: 50%; filter: blur(60px); opacity: .5; pointer-events: none; }
+    .w1 { width: 70vmax; height: 70vmax; left: -30vmax; top: -30vmax; background: #4b2c99; animation: treiben 18s ease-in-out infinite alternate; }
+    .w2 { width: 50vmax; height: 50vmax; right: -25vmax; bottom: -20vmax; background: #1e3591; animation: treiben 23s ease-in-out infinite alternate-reverse; }
+    @keyframes treiben { to { transform: translate(8vw, 6vh) scale(1.1); } }
+    .karte {
+      position: relative; width: min(380px, 100%); padding: 34px 26px 26px; border-radius: 28px; text-align: center;
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04) 60%, rgba(255,255,255,.07));
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 18px 50px rgba(0,0,0,.45);
+      backdrop-filter: blur(16px) saturate(160%);
+      animation: blase-auf .7s cubic-bezier(.3,1.5,.5,1) both;
+    }
+    svg { width: 64px; height: 64px; margin-bottom: 14px; filter: drop-shadow(0 0 14px rgba(183,148,255,.5));
+          animation: taumeln 3.2s ease-in-out .7s infinite; transform-origin: 50% 60%; }
+    h1 { font-size: 21px; margin-bottom: 6px; }
+    p { color: rgba(228,230,238,.62); word-break: break-word; }
+    .fehler { font-size: 12px; margin-top: 10px; opacity: .7; font-family: monospace; }
+    button {
+      margin-top: 24px; height: 50px; padding: 0 28px; border-radius: 25px; font: inherit; font-weight: 650; color: #eceef5;
+      background: linear-gradient(180deg, rgba(183,148,255,.42), rgba(143,99,240,.22));
+      border: 1px solid rgba(183,148,255,.6); box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 0 26px rgba(183,148,255,.25);
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+      animation: perle-auf .6s cubic-bezier(.3,1.7,.5,1) .35s backwards;
+    }
+    button:active { transform: scale(.9); transition-duration: .08s; }
+    @keyframes blase-auf { 0% { opacity: 0; transform: scale(.2, .6); filter: brightness(1.8); } 30% { opacity: 1; } 100% { transform: none; filter: none; } }
+    @keyframes perle-auf { from { opacity: 0; transform: translateY(14px) scale(.6); } }
+    @keyframes taumeln { 0%,100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(7deg) translateY(-5px); } }
+  </style>
+</head>
+<body>
+  <div class="wolke w1"></div><div class="wolke w2"></div>
+  <div class="karte">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M24 14c-2-6-10-10-16-8-4 8 0 18 8 20-5 2-7 8-4 12 6 0 10-5 12-10 2 5 6 10 12 10 3-4 1-10-4-12 8-2 12-12 8-20-6-2-14 2-16 8z" fill="#c9adff" fill-opacity=".85"/>
+      <path d="M24 14v22" stroke="#0e1014" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <h1>Seite nicht erreichbar</h1>
+    <p>Der Nachtfalter hat <b>{{HOST}}</b> nicht gefunden. Bist du online?</p>
+    <p class="fehler">{{FEHLER}}</p>
+    <button id="nochmal" data-url="{{URL}}">Nochmal versuchen</button>
+  </div>
+  <script>
+    document.getElementById('nochmal').addEventListener('click', function () {
+      location.href = this.dataset.url;
+    });
+  </script>
+</body>
+</html>

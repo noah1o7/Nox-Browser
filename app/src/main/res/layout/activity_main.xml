@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wurzel"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/nf_bg"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
+
+    <!-- Hier liegt die Webseite des aktiven Tabs -->
+    <FrameLayout
+        android:id="@+id/webBereich"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/leiste_platz"
+        android:background="@color/nf_bg" />
+
+    <!-- Glasvorhang beim Laden -->
+    <de.noah.nachtfalter.VorhangView
+        android:id="@+id/vorhang"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/leiste_platz" />
+
+    <!-- Leuchtende Lade-Linie über der Leiste -->
+    <View
+        android:id="@+id/ladeLinie"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="@dimen/leiste_platz"
+        android:background="@drawable/lade_linie"
+        android:visibility="invisible" />
+
+    <!-- Werkzeugleiste unten: Liquid-Glass-Pille -->
+    <LinearLayout
+        android:id="@+id/leiste"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/glas_leiste"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp">
+
+        <ImageButton
+            android:id="@+id/zurueckKnopf"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/ripple_rund"
+            android:contentDescription="Zurück"
+            android:src="@drawable/ic_zurueck" />
+
+        <LinearLayout
+            android:id="@+id/adressFeld"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:addStatesFromChildren="true"
+            android:background="@drawable/feld_auswahl"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <ImageView
+                android:id="@+id/schild"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="Werbeblocker"
+                android:src="@drawable/ic_schild_gruen" />
+
+            <TextView
+                android:id="@+id/schildZahl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:textColor="@color/nf_gruen"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/adresse"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="Suchen oder Adresse eingeben"
+                android:imeOptions="actionGo|flagNoExtractUi"
+                android:importantForAutofill="no"
+                android:inputType="textUri"
+                android:paddingStart="8dp"
+                android:paddingEnd="0dp"
+                android:singleLine="true"
+                android:textColor="@color/nf_text"
+                android:textColorHint="@color/nf_gedaempft"
+                android:textCursorDrawable="@drawable/cursor"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/tabKnopf"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/ripple_rund"
+            android:clickable="true"
+            android:contentDescription="Tabs"
+            android:focusable="true">
+
+            <TextView
+                android:id="@+id/tabZahl"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:background="@drawable/tab_zaehler"
+                android:gravity="center"
+                android:text="1"
+                android:textColor="@color/nf_text"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <ImageButton
+            android:id="@+id/menueKnopf"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/ripple_rund"
+            android:contentDescription="Menü"
+            android:src="@drawable/ic_menue" />
+    </LinearLayout>
+
+    <!-- Tab-Übersicht -->
+    <FrameLayout
+        android:id="@+id/uebersicht"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/uebersicht_grund"
+        android:clickable="true"
+        android:elevation="10dp"
+        android:focusable="false"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="22dp"
+                android:paddingTop="22dp"
+                android:paddingBottom="12dp"
+                android:text="Tabs"
+                android:textColor="@color/nf_text"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <ScrollView
+                android:id="@+id/kartenScroll"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="16dp">
+
+                <LinearLayout
+                    android:id="@+id/kartenListe"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:animateLayoutChanges="true"
+                    android:orientation="vertical" />
+            </ScrollView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <TextView
+                    android:id="@+id/neuerTabKnopf"
+                    android:layout_width="wrap_content"
+                    android:layout_height="52dp"
+                    android:background="@drawable/glas_pille_lila"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:paddingStart="26dp"
+                    android:paddingEnd="26dp"
+                    android:text="＋  Neuer Tab"
+                    android:textColor="@color/nf_text"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/fertigKnopf"
+                    android:layout_width="wrap_content"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/glas_pille"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:paddingStart="26dp"
+                    android:paddingEnd="26dp"
+                    android:text="Fertig"
+                    android:textColor="@color/nf_text"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Menü: abgedunkelter Hintergrund + Glas-Blase (liegt UNTER der Leiste, damit ☰ wieder schließen kann) -->
+    <FrameLayout
+        android:id="@+id/menueHuelle"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#73000000"
+        android:clickable="true"
+        android:focusable="false"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/menue"
+            android:layout_width="268dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="78dp"
+            android:background="@drawable/glas_menue"
+            android:clickable="true"
+            android:elevation="12dp"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp" />
+    </FrameLayout>
+
+    <!-- Ebene für Effekte (Glasperlen, Hinweis-Blasen) -->
+    <FrameLayout
+        android:id="@+id/effektEbene"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="30dp"
+        android:clipChildren="false" />
+</FrameLayout>

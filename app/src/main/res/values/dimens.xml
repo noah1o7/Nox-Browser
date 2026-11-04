@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Platz, den die Werkzeugleiste unten braucht -->
+    <dimen name="leiste_platz">76dp</dimen>
+</resources>
