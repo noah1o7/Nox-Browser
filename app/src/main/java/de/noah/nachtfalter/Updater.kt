@@ -6,37 +6,33 @@ import java.net.URL
 
 /**
  * Schaut auf GitHub nach, ob es eine neuere Nachtfalter-Version gibt.
- * Neue Versionen liegen als "Release" auf github.com/noah1o7/nachtfalter-android
- * (Tag z. B. "v0.2.0", mit der APK als angehängter Datei).
+ * Neue Versionen liegen im Ordner "updates" von github.com/noah1o7/nachtfalter-android:
+ *   updates/version.json  -> {"version": "0.2.0", "apk": "<Link zur APK>", "notizen": "..."}
+ *   updates/Nachtfalter.apk
  */
 object Updater {
 
-    private const val API = "https://api.github.com/repos/noah1o7/nachtfalter-android/releases/latest"
+    private const val ADRESSE = "https://raw.githubusercontent.com/noah1o7/nachtfalter-android/main/updates/version.json"
 
     data class NeueVersion(val version: String, val apkUrl: String, val notizen: String)
 
     /** Läuft im Hintergrund. Gibt null zurück, wenn es nichts Neues gibt (oder kein Internet da ist). */
     fun pruefen(aktuell: String): NeueVersion? {
         return try {
-            val verbindung = (URL(API).openConnection() as HttpURLConnection).apply {
+            // Zeitstempel anhängen, damit keine alte, zwischengespeicherte Antwort kommt
+            val verbindung = (URL(ADRESSE + "?t=" + System.currentTimeMillis()).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8000
                 readTimeout = 8000
-                setRequestProperty("Accept", "application/vnd.github+json")
+                useCaches = false
                 setRequestProperty("User-Agent", "Nachtfalter-Android")
             }
             try {
                 if (verbindung.responseCode != 200) return null
                 val json = JSONObject(verbindung.inputStream.bufferedReader().use { it.readText() })
-                val version = json.optString("tag_name").removePrefix("v").removePrefix("V")
-                if (!istNeuer(version, aktuell)) return null
-                val dateien = json.optJSONArray("assets") ?: return null
-                for (i in 0 until dateien.length()) {
-                    val datei = dateien.getJSONObject(i)
-                    if (datei.optString("name").endsWith(".apk", ignoreCase = true)) {
-                        return NeueVersion(version, datei.optString("browser_download_url"), json.optString("body"))
-                    }
-                }
-                null
+                val version = json.optString("version").removePrefix("v")
+                val apk = json.optString("apk")
+                if (apk.isBlank() || !istNeuer(version, aktuell)) return null
+                NeueVersion(version, apk, json.optString("notizen"))
             } finally {
                 verbindung.disconnect()
             }
