@@ -1,0 +1,48 @@
+{
+  "name": "nachtfalter",
+  "productName": "Nachtfalter",
+  "version": "0.10.0",
+  "description": "Ein eigener kleiner Browser im Dark Mode – mit Tabs, Suchleiste, Werbeblocker und Erweiterungen.",
+  "author": "Noah",
+  "main": "main.js",
+  "scripts": {
+    "start": "node node_modules/electron/cli.js .",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "@ghostery/adblocker-electron": "^2.0.0"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "allowScripts": {
+    "electron@39.8.10": true
+  },
+  "build": {
+    "appId": "de.noah.nachtfalter",
+    "productName": "Nachtfalter",
+    "directories": {
+      "output": "fertig"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "ui/**/*",
+      "build/icon.png"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Nachtfalter",
+      "artifactName": "Nachtfalter-Setup-${version}.exe",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

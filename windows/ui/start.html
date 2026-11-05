@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action https:">
+  <meta name="color-scheme" content="dark">
+  <title>Neuer Tab</title>
+  <style>
+    :root {
+      --bg: #131416; --flaeche: #1b1c1f; --flaeche-hoch: #26272b; --rand: #2f3034;
+      --text: #e9e9e6; --gedaempft: #9c9da3; --akzent: #e8a33d;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.4 system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", sans-serif;
+      padding: 16vh 16px 32px;
+    }
+    main { width: min(560px, 100%); margin: 0 auto; }
+
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .logo { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 600; }
+    .logo svg { width: 22px; height: 22px; }
+    .uhr { color: var(--gedaempft); font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
+
+    form { position: relative; }
+    form svg {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      width: 17px; height: 17px; fill: none; stroke: var(--gedaempft); stroke-width: 2; stroke-linecap: round;
+    }
+    input {
+      width: 100%; height: 48px; padding: 0 16px 0 42px;
+      border: 1px solid var(--rand); border-radius: 10px;
+      background: var(--flaeche); color: var(--text);
+      font: inherit; font-size: 16px; outline: none;
+    }
+    input::placeholder { color: var(--gedaempft); }
+    input:focus { border-color: var(--akzent); }
+
+    .kacheln { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+    .kachel {
+      display: flex; align-items: center; gap: 10px; min-width: 0;
+      padding: 10px; border: 1px solid var(--rand); border-radius: 10px;
+      color: var(--text); text-decoration: none; font-size: 14px;
+    }
+    .kachel:hover, .kachel:active { background: var(--flaeche); }
+    .kachel:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+    .kachel span {
+      flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px;
+      background: var(--flaeche-hoch); color: var(--gedaempft); font-size: 13px; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="logo">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M24 14c-2-6-10-10-16-8-4 8 0 18 8 20-5 2-7 8-4 12 6 0 10-5 12-10 2 5 6 10 12 10 3-4 1-10-4-12 8-2 12-12 8-20-6-2-14 2-16 8z" fill="#e8a33d"/>
+          <path d="M24 14v22" stroke="#131416" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Nachtfalter
+      </div>
+      <div class="uhr" id="uhr"></div>
+    </header>
+
+    <form id="suche">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="eingabe" autofocus placeholder="Suchen oder Adresse eingeben" aria-label="Suchen oder Adresse eingeben" spellcheck="false" autocomplete="off">
+    </form>
+
+    <nav class="kacheln">
+      <a class="kachel" href="https://www.youtube.com"><span>Y</span>YouTube</a>
+      <a class="kachel" href="https://de.wikipedia.org"><span>W</span>Wikipedia</a>
+      <a class="kachel" href="https://www.reddit.com"><span>R</span>Reddit</a>
+      <a class="kachel" href="https://github.com"><span>G</span>GitHub</a>
+      <a class="kachel" href="https://www.tagesschau.de"><span>T</span>Tagesschau</a>
+      <a class="kachel" href="https://claude.ai"><span>C</span>Claude</a>
+    </nav>
+  </main>
+
+  <script>
+    const suchUrl = new URLSearchParams(location.search).get('s') || 'https://duckduckgo.com/?q=%s&kae=d';
+
+    function zuUrl(t) {
+      t = t.trim();
+      if (/^https?:\/\//i.test(t)) return t;
+      if (/^localhost(:\d+)?(\/.*)?$/i.test(t)) return 'http://' + t;
+      if (!/\s/.test(t) && /^[^\s/]+\.[a-z]{2,}(:\d+)?(\/.*)?$/i.test(t)) return 'https://' + t;
+      return suchUrl.replace('%s', encodeURIComponent(t));
+    }
+
+    document.getElementById('suche').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const t = document.getElementById('eingabe').value;
+      if (t.trim()) location.href = zuUrl(t);
+    });
+
+    function uhrStellen() {
+      const jetzt = new Date();
+      document.getElementById('uhr').textContent =
+        jetzt.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' }) +
+        ', ' + jetzt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    }
+    uhrStellen();
+    setInterval(uhrStellen, 10000);
+  </script>
+</body>
+</html>

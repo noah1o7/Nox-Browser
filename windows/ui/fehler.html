@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <meta name="color-scheme" content="dark">
+  <title>Seite nicht erreichbar</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      background: #131416; color: #e9e9e6;
+      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+      padding: 20vh 24px 24px;
+    }
+    main { max-width: 520px; margin: 0 auto; }
+    h1 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    p { color: #9c9da3; margin-bottom: 4px; word-break: break-all; }
+    code { font: 12px/1.5 ui-monospace, Consolas, monospace; }
+    button {
+      margin-top: 20px; height: 36px; padding: 0 16px; border: 0; border-radius: 8px;
+      background: #e8a33d; color: #131416; font: inherit; font-weight: 600; cursor: pointer;
+    }
+    button:hover { background: #f0b458; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Seite nicht erreichbar</h1>
+    <p id="adresse"></p>
+    <p id="hinweis"></p>
+    <p><code id="code"></code></p>
+    <button id="nochmal">Nochmal versuchen</button>
+  </main>
+  <script>
+    const p = new URLSearchParams(location.search);
+    const ziel = p.get('u') || '';
+    const code = Number(p.get('c'));
+    document.getElementById('adresse').textContent = ziel;
+    document.getElementById('code').textContent = p.get('d') || '';
+    const hinweise = {
+      '-105': 'Die Adresse gibt es offenbar nicht. Vielleicht ein Tippfehler?',
+      '-106': 'Keine Internetverbindung. Prüfe WLAN oder Kabel.',
+      '-20': 'Diese Seite wurde vom Werbeblocker blockiert. Über das Schild in der Leiste kannst du ihn ausschalten.',
+      '-118': 'Die Seite hat zu lange nicht geantwortet.',
+    };
+    document.getElementById('hinweis').textContent = hinweise[String(code)] || '';
+    document.getElementById('nochmal').addEventListener('click', () => {
+      if (/^https?:/i.test(ziel)) location.href = ziel;
+    });
+  </script>
+</body>
+</html>

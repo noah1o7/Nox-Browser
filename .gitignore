@@ -19,3 +19,7 @@ nachtfalter-schluessel.jks
 schluessel.properties
 # Fertige APKs kommen als GitHub-Release, nicht ins Repo
 /fertig
+
+# Windows-Version (Electron)
+windows/node_modules/
+windows/fertig/

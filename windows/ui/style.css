@@ -1,0 +1,149 @@
+/* Nachtfalter: Tableiste und Werkzeugleiste */
+
+:root {
+  color-scheme: dark;
+  --bg: #131416;
+  --flaeche: #1b1c1f;
+  --flaeche-hoch: #26272b;
+  --rand: #2f3034;
+  --text: #e9e9e6;
+  --gedaempft: #9c9da3;
+  --akzent: #e8a33d;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+html, body {
+  height: 82px;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.2 system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  user-select: none;
+}
+
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--akzent); outline-offset: -2px; }
+
+svg {
+  width: 16px; height: 16px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+svg[hidden] { display: none !important; }
+
+.icon-knopf {
+  display: grid; place-items: center;
+  width: 32px; height: 32px; flex: none;
+  border-radius: 6px;
+  color: var(--gedaempft);
+}
+.icon-knopf:hover:not(:disabled) { background: var(--flaeche-hoch); color: var(--text); }
+.icon-knopf:disabled { opacity: 0.35; cursor: default; }
+
+/* ---------- Tableiste ---------- */
+
+#tableiste {
+  height: 38px;
+  display: flex; align-items: flex-end; gap: 4px;
+  padding: 6px 8px 0;
+}
+#tableiste > .icon-knopf { width: 26px; height: 26px; margin-bottom: 3px; }
+
+#tabs {
+  display: flex; gap: 2px;
+  min-width: 0; flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.tab {
+  display: flex; align-items: center; gap: 8px;
+  width: 210px; min-width: 64px; flex: 0 1 210px;
+  height: 32px; padding: 0 4px 0 10px;
+  border-radius: 8px 8px 0 0;
+  color: var(--gedaempft);
+  cursor: default;
+}
+.tab:hover { background: var(--flaeche); color: var(--text); }
+.tab.aktiv { background: var(--flaeche); color: var(--text); }
+
+.tab .favicon { width: 16px; height: 16px; flex: none; border-radius: 3px; }
+.tab .platzhalter {
+  width: 14px; height: 14px; flex: none; margin: 1px;
+  border-radius: 3px; background: var(--flaeche-hoch);
+}
+.tab .kreisel {
+  width: 14px; height: 14px; flex: none; margin: 1px;
+  border: 2px solid var(--rand); border-top-color: var(--akzent);
+  border-radius: 50%;
+  animation: drehen 0.8s linear infinite;
+}
+@keyframes drehen { to { transform: rotate(360deg); } }
+
+.tab .titel {
+  flex: 1; min-width: 0;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.tab .schliessen {
+  display: grid; place-items: center;
+  width: 22px; height: 22px; flex: none; border-radius: 4px;
+  color: var(--gedaempft);
+  opacity: 0;
+}
+.tab:hover .schliessen, .tab.aktiv .schliessen { opacity: 1; }
+.tab .schliessen svg { width: 11px; height: 11px; stroke-width: 2.4; }
+.tab .schliessen:hover { background: var(--flaeche-hoch); color: var(--text); }
+
+/* ---------- Werkzeugleiste ---------- */
+
+#werkzeugleiste {
+  height: 44px;
+  display: flex; align-items: center; gap: 2px;
+  padding: 0 8px;
+  background: var(--flaeche);
+  border-bottom: 1px solid var(--rand);
+}
+
+#adressformular {
+  position: relative; flex: 1; min-width: 0;
+  margin: 0 6px;
+}
+#adressformular .lupe {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px; color: var(--gedaempft); pointer-events: none;
+}
+#adresse {
+  width: 100%; height: 30px;
+  padding: 0 12px 0 31px;
+  border-radius: 6px;
+  border: 1px solid var(--rand);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit; font-size: 13.5px;
+  outline: none;
+}
+#adresse::placeholder { color: var(--gedaempft); }
+#adresse:focus { border-color: var(--akzent); }
+
+.schild {
+  display: flex; align-items: center; gap: 5px;
+  height: 32px; padding: 0 8px; border-radius: 6px;
+  color: var(--gedaempft);
+}
+.schild svg { width: 15px; height: 15px; }
+.schild:hover { background: var(--flaeche-hoch); color: var(--text); }
+.schild.aus { opacity: 0.55; }
+.schild #zaehler { font-variant-numeric: tabular-nums; font-size: 12px; min-width: 1ch; }
+
+#claude .funke { fill: currentColor; stroke-width: 1; }
+#claude.aktiv { background: var(--flaeche-hoch); color: var(--akzent); }
+
+/* ---------- Ladebalken ---------- */
+
+#ladebalken {
+  position: fixed; left: 0; bottom: 0; height: 2px; width: 0;
+  background: var(--akzent);
+  opacity: 0; transition: width 0.3s ease, opacity 0.2s ease;
+}
+#ladebalken.aktiv { opacity: 1; width: 65%; transition: width 6s cubic-bezier(.1, .7, .2, 1); }
+#ladebalken.fertig { opacity: 0; width: 100%; }

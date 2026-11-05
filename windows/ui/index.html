@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src * data:; style-src 'self'; script-src 'self'">
+  <title>Nachtfalter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="tableiste">
+    <div id="tabs"></div>
+    <button id="neuer-tab" class="icon-knopf" title="Neuer Tab (Strg+T)">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <div id="werkzeugleiste">
+    <button id="zurueck" class="icon-knopf" title="Zurück (Alt+←)">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button id="vor" class="icon-knopf" title="Vor (Alt+→)">
+      <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <button id="neu-laden" class="icon-knopf" title="Neu laden (F5)">
+      <svg id="icon-neu" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/></svg>
+      <svg id="icon-stopp" viewBox="0 0 24 24" hidden><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+
+    <form id="adressformular" autocomplete="off">
+      <svg class="lupe" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="adresse" spellcheck="false" placeholder="Suchen oder Adresse eingeben">
+    </form>
+
+    <button id="schild" class="schild" title="Werbeblocker">
+      <svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/></svg>
+      <span id="zaehler">0</span>
+    </button>
+    <button id="claude" class="icon-knopf" title="Claude-Seitenleiste (Strg+Umschalt+C)">
+      <svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M12 8.2l.9 1.9 1.9.9-1.9.9-.9 1.9-.9-1.9-1.9-.9 1.9-.9z" class="funke"/></svg>
+    </button>
+    <button id="menue" class="icon-knopf" title="Menü">
+      <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+
+  <div id="ladebalken"></div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
