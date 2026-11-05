@@ -817,13 +817,21 @@ class MainActivity : AppCompatActivity() {
         if (leise && System.currentTimeMillis() - prefs.getLong("updatePruefung", 0L) < 6 * 60 * 60 * 1000L) return
         if (!leise) hinweis("Suche nach Updates …")
         Thread {
-            val neu = Updater.pruefen(eigeneVersion())
+            val ergebnis = runCatching { Updater.pruefen(eigeneVersion()) }
             runOnUiThread {
                 if (isFinishing || isDestroyed) return@runOnUiThread
-                prefs.edit().putLong("updatePruefung", System.currentTimeMillis()).apply()
+                val neu = ergebnis.getOrNull()
                 when {
-                    neu != null -> zeigeUpdateMeldung(neu)
-                    !leise -> hinweis("Nachtfalter ${eigeneVersion()} ist aktuell")
+                    // Fehlgeschlagen (z. B. kein Internet): ehrlich sagen und später nochmal leise probieren
+                    ergebnis.isFailure -> if (!leise) hinweis("Konnte nicht nach Updates suchen – bist du online?")
+                    neu != null -> {
+                        prefs.edit().putLong("updatePruefung", System.currentTimeMillis()).apply()
+                        zeigeUpdateMeldung(neu)
+                    }
+                    else -> {
+                        prefs.edit().putLong("updatePruefung", System.currentTimeMillis()).apply()
+                        if (!leise) hinweis("Nox ${eigeneVersion()} ist aktuell")
+                    }
                 }
             }
         }.start()
@@ -841,7 +849,7 @@ class MainActivity : AppCompatActivity() {
             isClickable = true
         }
         val text = TextView(this).apply {
-            this.text = "Nachtfalter ${neu.version} ist verfügbar\nTippen zum Aktualisieren"
+            this.text = "Nox ${neu.version} ist verfügbar\nTippen zum Aktualisieren"
             textSize = 14f
             setTextColor(ContextCompat.getColor(this@MainActivity, R.color.nf_text))
             setLineSpacing(0f, 1.15f)
@@ -863,7 +871,7 @@ class MainActivity : AppCompatActivity() {
 
         meldung.setOnClickListener {
             if (updateDownloadId != -1L) return@setOnClickListener
-            text.text = "Lädt Nachtfalter ${neu.version} …"
+            text.text = "Lädt Nox ${neu.version} …"
             ladeUpdate(neu, text)
         }
         zu.setOnClickListener {
@@ -884,7 +892,7 @@ class MainActivity : AppCompatActivity() {
             val datei = File(ordner, "nachtfalter-update.apk")
             if (datei.exists()) datei.delete()
             val anfrage = DownloadManager.Request(Uri.parse(neu.apkUrl)).apply {
-                setTitle("Nachtfalter ${neu.version}")
+                setTitle("Nox ${neu.version}")
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                 setDestinationInExternalFilesDir(this@MainActivity, Environment.DIRECTORY_DOWNLOADS, "nachtfalter-update.apk")
             }
@@ -913,7 +921,7 @@ class MainActivity : AppCompatActivity() {
                             text.text = "Download fehlgeschlagen – nochmal tippen"
                         }
                         else -> {
-                            if (gesamt > 0) text.text = "Lädt Nachtfalter ${neu.version} … ${geladen * 100 / gesamt} %"
+                            if (gesamt > 0) text.text = "Lädt Nox ${neu.version} … ${geladen * 100 / gesamt} %"
                             text.postDelayed(this, 300)
                         }
                     }
@@ -930,7 +938,7 @@ class MainActivity : AppCompatActivity() {
         // Android fragt einmalig, ob Nachtfalter Apps (also sich selbst) installieren darf
         if (Build.VERSION.SDK_INT >= 26 && !packageManager.canRequestPackageInstalls()) {
             wartendeUpdateDatei = datei
-            hinweis("Erlaube Nachtfalter einmal, Updates zu installieren")
+            hinweis("Erlaube Nox einmal, Updates zu installieren")
             try {
                 startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
             } catch (e: Exception) { }

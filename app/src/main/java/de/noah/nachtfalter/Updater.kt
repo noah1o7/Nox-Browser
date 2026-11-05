@@ -5,7 +5,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Schaut auf GitHub nach, ob es eine neuere Nachtfalter-Version gibt.
+ * Schaut auf GitHub nach, ob es eine neuere Nox-Version gibt.
  * Neue Versionen liegen im Ordner "updates" von github.com/noah1o7/nachtfalter-android:
  *   updates/version.json  -> {"version": "0.2.0", "apk": "<Link zur APK>", "notizen": "..."}
  *   updates/Nachtfalter.apk
@@ -16,28 +16,27 @@ object Updater {
 
     data class NeueVersion(val version: String, val apkUrl: String, val notizen: String)
 
-    /** Läuft im Hintergrund. Gibt null zurück, wenn es nichts Neues gibt (oder kein Internet da ist). */
+    /**
+     * Läuft im Hintergrund. Gibt null zurück, wenn es nichts Neues gibt.
+     * Wirft einen Fehler, wenn GitHub nicht erreichbar ist – damit die App nicht fälschlich "aktuell" meldet.
+     */
     fun pruefen(aktuell: String): NeueVersion? {
-        return try {
-            // Zeitstempel anhängen, damit keine alte, zwischengespeicherte Antwort kommt
-            val verbindung = (URL(ADRESSE + "?t=" + System.currentTimeMillis()).openConnection() as HttpURLConnection).apply {
-                connectTimeout = 8000
-                readTimeout = 8000
-                useCaches = false
-                setRequestProperty("User-Agent", "Nachtfalter-Android")
-            }
-            try {
-                if (verbindung.responseCode != 200) return null
-                val json = JSONObject(verbindung.inputStream.bufferedReader().use { it.readText() })
-                val version = json.optString("version").removePrefix("v")
-                val apk = json.optString("apk")
-                if (apk.isBlank() || !istNeuer(version, aktuell)) return null
-                NeueVersion(version, apk, json.optString("notizen"))
-            } finally {
-                verbindung.disconnect()
-            }
-        } catch (e: Exception) {
-            null
+        // Zeitstempel anhängen, damit keine alte, zwischengespeicherte Antwort kommt
+        val verbindung = (URL(ADRESSE + "?t=" + System.currentTimeMillis()).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 8000
+            readTimeout = 8000
+            useCaches = false
+            setRequestProperty("User-Agent", "Nox-Android")
+        }
+        try {
+            if (verbindung.responseCode != 200) throw IllegalStateException("GitHub antwortet mit ${verbindung.responseCode}")
+            val json = JSONObject(verbindung.inputStream.bufferedReader().use { it.readText() })
+            val version = json.optString("version").removePrefix("v")
+            val apk = json.optString("apk")
+            if (apk.isBlank() || !istNeuer(version, aktuell)) return null
+            return NeueVersion(version, apk, json.optString("notizen"))
+        } finally {
+            verbindung.disconnect()
         }
     }
 

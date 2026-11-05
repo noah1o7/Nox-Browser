@@ -1,4 +1,4 @@
-# Nachtfalter für Android
+# Nox für Android
 
 Ein eigener, durchgehend dunkler Browser für Android.
 
