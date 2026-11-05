@@ -1,4 +1,4 @@
-// Nachtfalter – Hauptprozess
+// Nox – Hauptprozess
 // Hier passiert alles "hinter den Kulissen": Fenster, Tabs, Werbeblocker,
 // Erweiterungen, eigene Skripte und Einstellungen.
 
@@ -8,12 +8,17 @@ const {
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { pathToFileURL } = require('url');
+const updater = require('./updater');
 
 // ---------------------------------------------------------------------------
 // Einstellungen
 // ---------------------------------------------------------------------------
 
+// Nox hieß früher "Nachtfalter". Damit Einstellungen, Logins und Erweiterungen erhalten
+// bleiben, nutzt Nox weiter den alten Datenordner (Windows: %APPDATA%\Nachtfalter).
+app.setPath('userData', path.join(app.getPath('appData'), 'Nachtfalter'));
 const DATEN = app.getPath('userData');
 const EINSTELLUNGEN_DATEI = path.join(DATEN, 'einstellungen.json');
 const ERWEITERUNGEN_ORDNER = path.join(DATEN, 'erweiterungen');
@@ -68,6 +73,65 @@ function eingabeZuUrl(text) {
 }
 
 // ---------------------------------------------------------------------------
+// Geheimer privater Tab
+//   - Öffnen: den eigenen Geheimcode (nur Ziffern) in die Adressleiste tippen
+//   - Code festlegen: "nox:code 1234"   ändern: "nox:code ALT NEU"
+//   - Der Code steht nirgends im Code, sondern nur als Hash in einstellungen.json
+//   - Eigene, dauerhafte Sitzung: Logins bleiben, aber getrennt von den normalen Tabs
+// ---------------------------------------------------------------------------
+
+const NUR_ZIFFERN = /^\d{4,16}$/;
+const PRIVAT_PARTITION = 'persist:nox-privat';
+const PRIVAT_AUSZEIT = 60 * 1000; // so lange darf das Fenster minimiert sein
+
+function codeHash(code, salz) {
+  return crypto.pbkdf2Sync(code, salz, 100000, 32, 'sha256');
+}
+
+function istGeheimcode(text) {
+  if (!NUR_ZIFFERN.test(text) || !einstellungen.geheimSalz || !einstellungen.geheimHash) return false;
+  const versuch = codeHash(text, Buffer.from(einstellungen.geheimSalz, 'base64'));
+  const gespeichert = Buffer.from(einstellungen.geheimHash, 'base64');
+  return versuch.length === gespeichert.length && crypto.timingSafeEqual(versuch, gespeichert);
+}
+
+function geheimcodeSpeichern(code) {
+  const salz = crypto.randomBytes(16);
+  einstellungen.geheimSalz = salz.toString('base64');
+  einstellungen.geheimHash = codeHash(code, salz).toString('base64');
+  einstellungenSpeichern();
+}
+
+// Gibt eine Meldung zurück, wenn die Eingabe ein "nox:code"-Befehl war, sonst null
+function codeBefehl(text) {
+  const teile = text.trim().split(/\s+/);
+  if ((teile[0] || '').toLowerCase() !== 'nox:code') return null;
+  const gesetzt = !!einstellungen.geheimHash;
+  if (!gesetzt && teile.length === 2) {
+    if (!NUR_ZIFFERN.test(teile[1])) return 'Der Code muss aus 4 bis 16 Ziffern bestehen.';
+    geheimcodeSpeichern(teile[1]);
+    return 'Geheimcode gespeichert.';
+  }
+  if (gesetzt && teile.length === 3 && istGeheimcode(teile[1])) {
+    if (!NUR_ZIFFERN.test(teile[2])) return 'Der Code muss aus 4 bis 16 Ziffern bestehen.';
+    geheimcodeSpeichern(teile[2]);
+    return 'Geheimcode geändert.';
+  }
+  if (!gesetzt) return 'Der Code muss aus 4 bis 16 Ziffern bestehen.';
+  return 'Code nicht geändert.'; // falscher alter Code: bewusst nichts verraten
+}
+
+let privatSitzung = null;
+function privatSession() {
+  if (privatSitzung) return privatSitzung;
+  privatSitzung = session.fromPartition(PRIVAT_PARTITION);
+  privatSitzung.setUserAgent(sauberenUserAgent(privatSitzung.getUserAgent()));
+  berechtigungenEinrichten(privatSitzung);
+  if (einstellungen.adblock) blockerEin(privatSitzung);
+  return privatSitzung;
+}
+
+// ---------------------------------------------------------------------------
 // Interne Seiten (Startseite, Fehlerseite)
 // ---------------------------------------------------------------------------
 
@@ -114,7 +178,7 @@ function fensterErstellen() {
     height: 820,
     minWidth: 640,
     minHeight: 420,
-    title: 'Nachtfalter',
+    title: 'Nox',
     icon: path.join(__dirname, 'build', 'icon.png'),
     backgroundColor: HINTERGRUND,
     autoHideMenuBar: true,
@@ -136,6 +200,13 @@ function fensterErstellen() {
   });
 
   fenster.on('resize', anordnen);
+  // War das Fenster länger als eine Minute minimiert, geht der private Tab zu
+  let minimiertSeit = 0;
+  fenster.on('minimize', () => { minimiertSeit = Date.now(); });
+  fenster.on('restore', () => {
+    if (minimiertSeit && Date.now() - minimiertSeit > PRIVAT_AUSZEIT) schliessePrivat();
+    minimiertSeit = 0;
+  });
   fenster.on('closed', () => {
     for (const t of tabs.values()) {
       if (!t.view.webContents.isDestroyed()) t.view.webContents.close();
@@ -206,7 +277,7 @@ function seitenleisteErstellen() {
     if (!istHauptframe || code === -3 || u.startsWith(FEHLER_URL)) return;
     wc.loadFile(FEHLER_DATEI, { query: { u, d: beschreibung, c: String(code) } });
   });
-  // Nachtfalter-Design einschleusen (+ eigene "claude.ai.css" aus dem Skripte-Ordner)
+  // Nox-Design einschleusen (+ eigene "claude.ai.css" aus dem Skripte-Ordner)
   wc.on('dom-ready', () => {
     let host = '';
     try { host = new URL(wc.getURL()).hostname; } catch {}
@@ -243,7 +314,7 @@ function seitenleisteNeuLaden() {
   if (seitenleiste) seitenleiste.webContents.loadURL(CLAUDE_URL);
 }
 
-function neuerTab(url, { aktivieren = true } = {}) {
+function neuerTab(url, { aktivieren = true, privat = false } = {}) {
   if (!fenster) return;
   const id = naechsteId++;
   const view = new WebContentsView({
@@ -251,18 +322,22 @@ function neuerTab(url, { aktivieren = true } = {}) {
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
+      ...(privat ? { session: privatSession() } : {}),
     },
   });
   view.setBackgroundColor(HINTERGRUND);
 
-  const tab = { id, view, titel: 'Neuer Tab', url: '', laedt: false, favicon: null, geblockt: 0 };
+  const tab = { id, view, titel: privat ? 'Privat' : 'Neuer Tab', url: '', laedt: false, favicon: null, geblockt: 0, privat };
   tabs.set(id, tab);
   fenster.contentView.addChildView(view);
   view.setVisible(false);
   anordnen();
 
   const wc = view.webContents;
-  wc.on('page-title-updated', (_e, titel) => { tab.titel = titel; tabsSenden(); });
+  wc.on('page-title-updated', (_e, titel) => {
+    tab.titel = privat && titel === 'Neuer Tab' ? 'Privat' : titel;
+    tabsSenden();
+  });
   wc.on('did-start-loading', () => { tab.laedt = true; tabsSenden(); });
   wc.on('did-stop-loading', () => { tab.laedt = false; tabsSenden(); });
   wc.on('did-navigate', (_e, u) => {
@@ -284,9 +359,11 @@ function neuerTab(url, { aktivieren = true } = {}) {
   });
 
   // Links, die ein neues Fenster öffnen wollen, landen in einem neuen Tab.
+  // Im privaten Tab bleiben sie im privaten Tab – sonst würden sie in der normalen Sitzung landen.
   wc.setWindowOpenHandler(({ url: ziel, disposition }) => {
     if (/^https?:|^about:/i.test(ziel)) {
-      neuerTab(ziel, { aktivieren: disposition !== 'background-tab' });
+      if (privat) wc.loadURL(ziel);
+      else neuerTab(ziel, { aktivieren: disposition !== 'background-tab' });
     }
     return { action: 'deny' };
   });
@@ -304,6 +381,9 @@ function tabAktivieren(id) {
   if (!tab) return;
   aktiverTab = id;
   for (const t of tabs.values()) t.view.setVisible(t.id === id);
+  // Im privaten Tab: keine Screenshots / Bildschirmaufnahmen des Fensters
+  if (typeof fenster.setContentProtection === 'function') fenster.setContentProtection(!!tab.privat);
+  menueAktualisieren();
   tabsSenden();
   if (!tab.url || tab.url.startsWith(START_URL)) adressleisteFokussieren();
   else tab.view.webContents.focus();
@@ -317,6 +397,11 @@ function tabSchliessen(id) {
   fenster.contentView.removeChildView(tab.view);
   tab.view.webContents.close();
   tabs.delete(id);
+  if (tab.privat && privatSitzung) {
+    // Logins (Cookies) bleiben, zwischengespeicherte Seiten nicht
+    privatSitzung.cookies.flushStore().catch(() => {});
+    privatSitzung.clearCache().catch(() => {});
+  }
 
   if (tabs.size === 0) {
     fenster.close();
@@ -348,6 +433,42 @@ function aktivesWc() {
   return t ? t.view.webContents : null;
 }
 
+function privaterTab() {
+  for (const t of tabs.values()) if (t.privat) return t;
+  return null;
+}
+
+function oeffnePrivat() {
+  const vorhanden = privaterTab();
+  if (vorhanden) tabAktivieren(vorhanden.id);
+  else neuerTab(null, { privat: true });
+}
+
+function schliessePrivat() {
+  const t = privaterTab();
+  if (t) tabSchliessen(t.id);
+}
+
+function privatAllesLoeschen() {
+  if (!fenster) return;
+  dialog.showMessageBox(fenster, {
+    type: 'warning',
+    buttons: ['Löschen', 'Abbrechen'],
+    defaultId: 1,
+    cancelId: 1,
+    title: 'Privaten Bereich löschen',
+    message: 'Privaten Bereich löschen?',
+    detail: 'Alle Logins, Cookies und Website-Daten im privaten Tab werden gelöscht. Das lässt sich nicht rückgängig machen.',
+  }).then(async ({ response }) => {
+    if (response !== 0) return;
+    schliessePrivat();
+    const ses = privatSession();
+    await ses.clearStorageData().catch(() => {});
+    await ses.clearCache().catch(() => {});
+    if (fenster) dialog.showMessageBox(fenster, { type: 'info', message: 'Privater Bereich gelöscht.' });
+  });
+}
+
 function verlauf(wc) {
   const h = wc.navigationHistory;
   return {
@@ -375,6 +496,7 @@ function tabsSenden() {
         geblockt: t.geblockt,
         kannZurueck: v.zurueck,
         kannVor: v.vor,
+        privat: !!t.privat,
       };
     });
     ui.webContents.send('tabs', { aktiv: aktiverTab, tabs: liste });
@@ -402,6 +524,27 @@ function adressleisteFokussieren() {
 
 let blocker = null;
 
+// Der Werbeblocker meldet beim Einschalten zwei globale Kanäle an. Bei mehreren Sitzungen
+// (normal + privat) würde das doppelt passieren und abstürzen – darum diese Helfer.
+const ADBLOCK_KANAELE = ['@ghostery/adblocker/inject-cosmetic-filters', '@ghostery/adblocker/is-mutation-observer-enabled'];
+
+function blockerEin(ses) {
+  if (!blocker || !ses || blocker.isBlockingEnabled(ses)) return;
+  for (const k of ADBLOCK_KANAELE) ipcMain.removeHandler(k);
+  blocker.enableBlockingInSession(ses);
+}
+
+function blockerAus(ses) {
+  if (!blocker || !ses || !blocker.isBlockingEnabled(ses)) return;
+  blocker.disableBlockingInSession(ses); // entfernt dabei auch die globalen Kanäle
+  // Läuft er in einer anderen Sitzung weiter, die Kanäle wieder anmelden
+  const andere = [session.defaultSession, privatSitzung].some((x) => x && x !== ses && blocker.isBlockingEnabled(x));
+  if (andere) {
+    ipcMain.handle(ADBLOCK_KANAELE[0], (e, url, msg) => blocker.onInjectCosmeticFilters(e, url, msg));
+    ipcMain.handle(ADBLOCK_KANAELE[1], (e) => blocker.onIsMutationObserverEnabled(e));
+  }
+}
+
 async function werbeblockerStarten() {
   try {
     const modul = await import('@ghostery/adblocker-electron');
@@ -420,7 +563,10 @@ async function werbeblockerStarten() {
         }
       }
     });
-    if (einstellungen.adblock) blocker.enableBlockingInSession(session.defaultSession);
+    if (einstellungen.adblock) {
+      blockerEin(session.defaultSession);
+      blockerEin(privatSitzung);
+    }
     console.log('Werbeblocker aktiv.');
   } catch (fehler) {
     console.error('Werbeblocker konnte nicht geladen werden:', fehler);
@@ -432,8 +578,10 @@ function werbeblockerUmschalten() {
   einstellungen.adblock = !einstellungen.adblock;
   einstellungenSpeichern();
   if (blocker) {
-    if (einstellungen.adblock) blocker.enableBlockingInSession(session.defaultSession);
-    else blocker.disableBlockingInSession(session.defaultSession);
+    for (const ses of [session.defaultSession, privatSitzung]) {
+      if (einstellungen.adblock) blockerEin(ses);
+      else blockerAus(ses);
+    }
   }
   einstellungenSenden();
   menueAktualisieren();
@@ -470,8 +618,8 @@ function skripteOrdnerVorbereiten() {
   const liesmich = path.join(SKRIPTE_ORDNER, 'LIESMICH.txt');
   if (!fs.existsSync(liesmich)) {
     fs.writeFileSync(liesmich, [
-      'Eigene Skripte für Nachtfalter',
-      '==============================',
+      'Eigene Skripte für Nox',
+      '======================',
       '',
       'Lege hier .js- oder .css-Dateien ab. Sie werden beim Laden jeder Seite eingefügt.',
       '',
@@ -539,7 +687,7 @@ function berechtigungenEinrichten(ses = session.defaultSession) {
       cancelId: 1,
       title: 'Berechtigung',
       message: `${host} möchte Zugriff auf ${namen[berechtigung] || berechtigung}.`,
-      detail: 'Die Entscheidung gilt, bis du Nachtfalter schließt.',
+      detail: 'Die Entscheidung gilt, bis du Nox schließt.',
     }).then(({ response }) => {
       const ok = response === 0;
       erlaubteBerechtigungen.set(schluessel, ok);
@@ -558,15 +706,22 @@ function neustartFragen() {
     type: 'info',
     buttons: ['Jetzt neu starten', 'Später'],
     defaultId: 0,
-    message: 'Diese Änderung wird nach einem Neustart von Nachtfalter aktiv.',
+    message: 'Diese Änderung wird nach einem Neustart von Nox aktiv.',
   }).then(({ response }) => {
     if (response === 0) { app.relaunch(); app.exit(0); }
   });
 }
 
 function einstellungsMenue() {
+  const imPrivaten = !!(tabs.get(aktiverTab) || {}).privat;
   return [
     { label: 'Neuer Tab', accelerator: 'CmdOrCtrl+T', click: () => neuerTab() },
+    ...(imPrivaten ? [
+      { type: 'separator' },
+      { label: 'Privaten Tab schließen', click: schliessePrivat },
+      { label: 'Privaten Bereich löschen …', click: privatAllesLoeschen },
+      { type: 'separator' },
+    ] : []),
     { label: 'Claude-Seitenleiste', accelerator: 'CmdOrCtrl+Shift+C', type: 'checkbox', checked: leisteOffen, click: seitenleisteUmschalten },
     { label: 'Claude neu laden', enabled: !!seitenleiste, click: seitenleisteNeuLaden },
     { type: 'separator' },
@@ -615,15 +770,25 @@ function einstellungsMenue() {
     },
     { label: 'Eigene Skripte-Ordner öffnen', click: () => shell.openPath(SKRIPTE_ORDNER) },
     { type: 'separator' },
+    { label: 'Nach Updates suchen', click: () => updatesPruefen(false) },
     {
-      label: 'Über Nachtfalter',
+      label: 'Über Nox',
       click: () => fenster && dialog.showMessageBox(fenster, {
         type: 'info',
-        message: `Nachtfalter ${app.getVersion()}`,
+        message: `Nox ${app.getVersion()}`,
         detail: `Gebaut mit Electron ${process.versions.electron} (Chromium ${process.versions.chrome}).`,
       }),
     },
   ];
+}
+
+function updatesPruefen(leise) {
+  // Updates gibt es nur für die installierte Version (nicht bei "npm start")
+  if (!app.isPackaged) {
+    if (!leise && fenster) dialog.showMessageBox(fenster, { type: 'info', message: 'Updates gibt es nur in der installierten Version von Nox.' });
+    return;
+  }
+  updater.updateSuchen({ leise, fensterHolen: () => fenster });
 }
 
 function zoom(delta) {
@@ -636,7 +801,7 @@ function menueAktualisieren() {
   const istMac = process.platform === 'darwin';
   const vorlage = [
     ...(istMac ? [{ role: 'appMenu' }] : []),
-    { label: 'Nachtfalter', submenu: einstellungsMenue() },
+    { label: 'Nox', submenu: einstellungsMenue() },
     {
       label: 'Navigation',
       submenu: [
@@ -678,6 +843,19 @@ function navigation(aktion) {
 // ---------------------------------------------------------------------------
 
 ipcMain.on('navigiere', (_e, text) => {
+  // Geheimcode oder "nox:code …"? Dann wird NICHT gesucht.
+  const eingabe = (text || '').trim();
+  const meldung = codeBefehl(eingabe);
+  if (meldung) {
+    if (ui) ui.webContents.send('adresse-leeren');
+    if (fenster) dialog.showMessageBox(fenster, { type: 'info', message: meldung });
+    return;
+  }
+  if (istGeheimcode(eingabe)) {
+    if (ui) ui.webContents.send('adresse-leeren');
+    oeffnePrivat();
+    return;
+  }
   const ziel = eingabeZuUrl(text);
   const wc = aktivesWc();
   if (!ziel || !wc) return;
@@ -697,7 +875,7 @@ ipcMain.on('menue', (_e, x, y) => {
 ipcMain.on('seitenleiste-umschalten', seitenleisteUmschalten);
 
 function sauberenUserAgent(ua) {
-  return ua.split(' ').filter((teil) => !/^(Electron|nachtfalter|Nachtfalter)\//.test(teil)).join(' ');
+  return ua.split(' ').filter((teil) => !/^(Electron|nachtfalter|Nachtfalter|nox-browser|Nox)\//.test(teil)).join(' ');
 }
 
 // ---------------------------------------------------------------------------
@@ -717,6 +895,7 @@ app.whenReady().then(async () => {
   menueAktualisieren();
   fensterErstellen();
   werbeblockerStarten(); // läuft im Hintergrund, Fenster ist schon offen
+  setTimeout(() => updatesPruefen(true), 8000); // kurz nach dem Start leise nach Updates schauen
 
   app.on('activate', () => { if (!fenster) fensterErstellen(); });
 });

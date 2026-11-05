@@ -1,8 +1,8 @@
 {
-  "name": "nachtfalter",
-  "productName": "Nachtfalter",
-  "version": "0.10.0",
-  "description": "Ein eigener kleiner Browser im Dark Mode – mit Tabs, Suchleiste, Werbeblocker und Erweiterungen.",
+  "name": "nox-browser",
+  "productName": "Nox",
+  "version": "0.11.0",
+  "description": "Nox – ein schlanker, durchgehend dunkler Browser mit Tabs, Werbeblocker und Erweiterungen.",
   "author": "Noah",
   "main": "main.js",
   "scripts": {
@@ -21,13 +21,14 @@
   },
   "build": {
     "appId": "de.noah.nachtfalter",
-    "productName": "Nachtfalter",
+    "productName": "Nox",
     "directories": {
       "output": "fertig"
     },
     "files": [
       "main.js",
       "preload.js",
+      "updater.js",
       "ui/**/*",
       "build/icon.png"
     ],
@@ -40,8 +41,8 @@
       "perMachine": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Nachtfalter",
-      "artifactName": "Nachtfalter-Setup-${version}.exe",
+      "shortcutName": "Nox",
+      "artifactName": "Nox-Setup-${version}.exe",
       "deleteAppDataOnUninstall": false
     }
   }

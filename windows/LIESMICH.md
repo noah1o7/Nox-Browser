@@ -1,6 +1,6 @@
-# Nachtfalter 🦋
+# Nox für Windows 🌙
 
-Dein eigener kleiner Browser – komplett im Dark Mode.
+Dein eigener kleiner Browser – komplett im Dark Mode. (Früher hieß er Nachtfalter.)
 
 ## Was er kann
 
@@ -11,7 +11,15 @@ Dein eigener kleiner Browser – komplett im Dark Mode.
 - **Berechtigungen** – Seiten müssen fragen, bevor sie Kamera, Mikrofon oder Standort bekommen
 - **Chrome-Erweiterungen** (entpackt) und **eigene Skripte**, siehe unten
 
-## Installieren und starten
+## Installationsdatei bauen
+
+```
+npm install
+npm run dist
+```
+Die fertige `Nox-Setup-X.Y.Z.exe` liegt danach im Ordner `fertig`.
+
+## Zum Ausprobieren starten (ohne Installation)
 
 1. **Node.js** installieren, falls noch nicht vorhanden: https://nodejs.org → die „LTS“-Version.
 2. Diesen Ordner irgendwo entpacken, z. B. auf den Desktop.
@@ -47,7 +55,7 @@ Dein eigener kleiner Browser – komplett im Dark Mode.
 
 1. Im ☰-Menü → *Erweiterungen* → *Erweiterungs-Ordner öffnen*.
 2. Die Erweiterung **entpackt** als eigenen Ordner dort hineinlegen (der Ordner muss eine `manifest.json` enthalten).
-3. Nachtfalter neu starten.
+3. Nox neu starten.
 
 So kommst du an den entpackten Ordner: In Chrome `chrome://extensions` öffnen, oben rechts „Entwicklermodus“ einschalten, dann zeigt jede Erweiterung ihre ID. Die Dateien liegen unter
 - Windows: `%LOCALAPPDATA%\Google\Chrome\User Data\Default\Extensions\<ID>\<Version>`
@@ -68,7 +76,7 @@ Neu laden (F5) reicht, kein Neustart nötig. Eine Kurzanleitung liegt als `LIESM
 
 ## NordVPN & Co.
 
-- **NordVPN:** Einfach die normale NordVPN-App laufen lassen, sie schützt den ganzen Computer, also auch Nachtfalter.
+- **NordVPN:** Einfach die normale NordVPN-App laufen lassen, sie schützt den ganzen Computer, also auch Nox.
 - **NordLocker:** Läuft unabhängig vom Browser weiter wie gewohnt.
 - **NordPass:** Die Desktop-App nutzen und Passwörter von dort kopieren.
 
@@ -76,4 +84,5 @@ Neu laden (F5) reicht, kein Neustart nötig. Eine Kurzanleitung liegt als `LIESM
 
 - Unter der Haube steckt Chromium (über Electron). Sicherheitsupdates bekommst du, indem du ab und zu `npm update` im Ordner ausführst.
 - Google-Anmeldungen blockt Google bei selbstgebauten Browsern manchmal („Dieser Browser ist möglicherweise nicht sicher“). Dann am besten im Hauptbrowser anmelden.
-- Einstellungen, Cache und Erweiterungen liegen im Benutzerordner von Nachtfalter (Windows: `%APPDATA%\Nachtfalter`, Mac: `~/Library/Application Support/Nachtfalter`).
+- Einstellungen, Cache und Erweiterungen liegen im Benutzerordner (Windows: `%APPDATA%\Nachtfalter`, Mac: `~/Library/Application Support/Nachtfalter`). Der Ordner heißt absichtlich noch wie früher, damit nach der Umbenennung nichts verloren geht.
+- Updates: Nox schaut nach dem Start selbst unter den GitHub-Releases nach einer neueren `Nox-Setup-X.Y.Z.exe`, von Hand über ☰ → *Nach Updates suchen*.

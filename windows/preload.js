@@ -15,4 +15,5 @@ contextBridge.exposeInMainWorld('nf', {
   aufEinstellungen: (cb) => ipcRenderer.on('einstellungen', (_e, daten) => cb(daten)),
   aufFokusAdresse: (cb) => ipcRenderer.on('fokus-adresse', () => cb()),
   aufSchliessAnfrage: (cb) => ipcRenderer.on('schliess-anfrage', (_e, id) => cb(id)),
+  aufAdresseLeeren: (cb) => ipcRenderer.on('adresse-leeren', () => cb()),
 });

@@ -15,6 +15,7 @@ const ladebalken = $('ladebalken');
 let zustand = { aktiv: null, tabs: [] };
 let adblockAn = true;
 let ladeteAktiv = false;
+let normalerPlatzhalter = 'Suchen oder Adresse eingeben';
 
 function svgSchliessen() {
   const ns = 'http://www.w3.org/2000/svg';
@@ -33,7 +34,7 @@ function tabsZeichnen() {
   tabsEl.replaceChildren();
   for (const t of zustand.tabs) {
     const el = document.createElement('div');
-    el.className = 'tab' + (t.id === zustand.aktiv ? ' aktiv' : '');
+    el.className = 'tab' + (t.id === zustand.aktiv ? ' aktiv' : '') + (t.privat ? ' privat' : '');
     el.dataset.id = t.id;
     el.title = t.titel;
 
@@ -53,7 +54,7 @@ function tabsZeichnen() {
 
     const titel = document.createElement('span');
     titel.className = 'titel';
-    titel.textContent = t.titel || t.url || 'Neuer Tab';
+    titel.textContent = t.titel || t.url || (t.privat ? 'Privat' : 'Neuer Tab');
 
     const zu = document.createElement('button');
     zu.className = 'schliessen';
@@ -76,6 +77,8 @@ function tabsZeichnen() {
 function leisteAktualisieren() {
   const t = zustand.tabs.find((x) => x.id === zustand.aktiv);
   if (!t) return;
+  document.body.classList.toggle('privat', !!t.privat);
+  adresse.placeholder = t.privat ? 'Privat suchen oder Adresse eingeben' : normalerPlatzhalter;
   if (document.activeElement !== adresse) adresse.value = t.url;
   knopfZurueck.disabled = !t.kannZurueck;
   knopfVor.disabled = !t.kannVor;
@@ -106,11 +109,12 @@ nf.aufTabs((daten) => {
 nf.aufEinstellungen((e) => {
   adblockAn = e.adblock;
   schild.classList.toggle('aus', !e.adblock);
-  adresse.placeholder = `Mit ${e.suchmaschine} suchen oder Adresse eingeben`;
+  normalerPlatzhalter = `Mit ${e.suchmaschine} suchen oder Adresse eingeben`;
   leisteAktualisieren();
 });
 
 nf.aufFokusAdresse(() => { adresse.focus(); adresse.select(); });
+nf.aufAdresseLeeren(() => { adresse.value = ''; });
 
 $('adressformular').addEventListener('submit', (e) => {
   e.preventDefault();

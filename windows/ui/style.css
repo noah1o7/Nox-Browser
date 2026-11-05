@@ -1,4 +1,4 @@
-/* Nachtfalter: Tableiste und Werkzeugleiste */
+/* Nox: Tableiste und Werkzeugleiste */
 
 :root {
   color-scheme: dark;
@@ -147,3 +147,14 @@ svg[hidden] { display: none !important; }
 }
 #ladebalken.aktiv { opacity: 1; width: 65%; transition: width 6s cubic-bezier(.1, .7, .2, 1); }
 #ladebalken.fertig { opacity: 0; width: 100%; }
+
+/* ---------- Geheimer privater Tab ---------- */
+
+.tab.privat .platzhalter { background: none; border: 1.5px dashed var(--akzent); }
+.tab.privat .titel { color: var(--akzent); }
+.tab.privat { animation: privat-rein 0.32s ease-out; }
+@keyframes privat-rein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+#adresse { transition: border-color 0.32s ease; }
+body.privat #adresse { border-style: dashed; border-color: #c4852a; }
+body.privat #adresse:focus { border-style: solid; border-color: var(--akzent); }

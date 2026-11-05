@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="328" height="52" viewBox="0 0 328 52" role="img" aria-label="Nox für Android herunterladen">
-  <rect x="0.5" y="0.5" width="327" height="51" rx="12" fill="#e8a33d"/>
-  <g fill="none" stroke="#131416" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(22 14)">
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="52" viewBox="0 0 260 52" role="img" aria-label="Für Android herunterladen">
+  <rect x="0.5" y="0.5" width="259" height="51" rx="12" fill="#e8a33d"/>
+  <g fill="none" stroke="#131416" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(20 14)">
     <path d="M12 3v13M6.5 10.5 12 16l5.5-5.5M4 20.5h16"/>
   </g>
-  <text x="56" y="32" font-family="Inter, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16.5" font-weight="700" fill="#131416">Nox für Android herunterladen</text>
+  <text x="52" y="32" font-family="Inter, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="16.5" font-weight="700" fill="#131416">Für Android laden</text>
 </svg>
