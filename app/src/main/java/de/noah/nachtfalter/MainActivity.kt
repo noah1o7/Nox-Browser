@@ -14,6 +14,7 @@ import android.provider.Settings
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.WindowManager
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
@@ -38,6 +39,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -48,7 +50,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import java.io.File
 
 /** Ein offener Tab */
-class Tab(val webView: WebView) {
+class Tab(val webView: WebView, val privat: Boolean = false) {
     var titel = "Neuer Tab"
     var geblockt = 0
     var fortschritt = 100
@@ -61,6 +63,8 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val START_BASIS = "file:///android_asset/start.html"
+        /** So lange darf die App im Hintergrund sein, bevor der private Tab zugeht */
+        private const val PRIVAT_AUSZEIT = 60_000L
         private val SUCHMASCHINEN = listOf(
             "DuckDuckGo" to "https://duckduckgo.com/?q=%s&kae=d",
             "Brave" to "https://search.brave.com/search?q=%s",
@@ -74,6 +78,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webBereich: FrameLayout
     private lateinit var ladeLinie: View
     private lateinit var adresse: EditText
+    private lateinit var adressFeld: LinearLayout
     private lateinit var schild: ImageView
     private lateinit var schildZahl: TextView
     private lateinit var tabKnopf: FrameLayout
@@ -92,7 +97,11 @@ class MainActivity : AppCompatActivity() {
     // ---------- Zustand ----------
     private val tabs = mutableListOf<Tab>()
     private var aktiv = -1
-    private val aktuellerTab: Tab? get() = tabs.getOrNull(aktiv)
+    // Der geheime private Tab steht NICHT in der Tab-Liste – er taucht nirgends auf
+    private var privatTab: Tab? = null
+    private var privatAktiv = false
+    private var imHintergrundSeit = 0L
+    private val aktuellerTab: Tab? get() = if (privatAktiv) privatTab else tabs.getOrNull(aktiv)
 
     private lateinit var prefs: SharedPreferences
     @Volatile private var werbeblockerAn = true
@@ -134,6 +143,7 @@ class MainActivity : AppCompatActivity() {
         webBereich = findViewById(R.id.webBereich)
         ladeLinie = findViewById(R.id.ladeLinie)
         adresse = findViewById(R.id.adresse)
+        adressFeld = findViewById(R.id.adressFeld)
         schild = findViewById(R.id.schild)
         schildZahl = findViewById(R.id.schildZahl)
         tabKnopf = findViewById(R.id.tabKnopf)
@@ -205,9 +215,26 @@ class MainActivity : AppCompatActivity() {
         speichern()
         aktuellerTab?.webView?.onPause()
         CookieManager.getInstance().flush()
+        if (privatTab != null) Privat.profil().cookieManager.flush()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        imHintergrundSeit = System.currentTimeMillis()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // War die App länger als eine Minute weg, ist der private Tab zu
+        if (privatTab != null && imHintergrundSeit > 0 &&
+            System.currentTimeMillis() - imHintergrundSeit > PRIVAT_AUSZEIT) {
+            schliessePrivat(animiert = false)
+        }
     }
 
     override fun onDestroy() {
+        privatTab?.webView?.destroy()
+        privatTab = null
         tabs.forEach { it.webView.destroy() }
         tabs.clear()
         super.onDestroy()
@@ -260,11 +287,32 @@ class MainActivity : AppCompatActivity() {
             if (aktion == EditorInfo.IME_ACTION_GO || enter) {
                 val text = adresse.text.toString().trim()
                 val tab = aktuellerTab
-                if (text.isNotEmpty() && tab != null) ladeUrl(tab, zuUrl(text))
+                when {
+                    text.isEmpty() || tab == null -> {}
+                    geheimeEingabe(text) -> {}
+                    else -> ladeUrl(tab, zuUrl(text))
+                }
                 tastaturWeg()
                 true
             } else false
         }
+    }
+
+    /** Geheimcode oder "nox:code …"? Dann wird NICHT gesucht. */
+    private fun geheimeEingabe(text: String): Boolean {
+        when (Privat.codeBefehl(prefs, text)) {
+            Privat.CodeErgebnis.Gespeichert -> { adresse.setText(""); hinweis("Geheimcode gespeichert"); return true }
+            Privat.CodeErgebnis.Geaendert -> { adresse.setText(""); hinweis("Geheimcode geändert"); return true }
+            Privat.CodeErgebnis.Ungueltig -> { hinweis("Der Code muss aus 4 bis 16 Ziffern bestehen"); return true }
+            Privat.CodeErgebnis.NichtGeaendert -> { adresse.setText(""); hinweis("Code nicht geändert"); return true }
+            null -> {}
+        }
+        if (Privat.istGeheimcode(prefs, text)) {
+            adresse.setText("")
+            oeffnePrivat()
+            return true
+        }
+        return false
     }
 
     private fun tastaturWeg() {
@@ -351,10 +399,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun zeigeTab(index: Int, animiert: Boolean = true) {
         val alter = aktuellerTab
+        privatAktiv = false
         aktiv = index
         val tab = tabs[index]
         if (alter != null && alter !== tab) alter.webView.onPause()
+        setzePrivatAussehen(false)
+        haengeEin(tab, animiert)
+    }
 
+    /** Zeigt die WebView eines Tabs im Web-Bereich an */
+    private fun haengeEin(tab: Tab, animiert: Boolean, dauer: Long = 120) {
         webBereich.removeAllViews()
         (tab.webView.parent as? ViewGroup)?.removeView(tab.webView)
         webBereich.addView(tab.webView, FrameLayout.LayoutParams(
@@ -369,7 +423,79 @@ class MainActivity : AppCompatActivity() {
         aktualisiereLeiste()
         if (animiert) {
             webBereich.alpha = 0f
-            webBereich.animate().alpha(1f).setDuration(120).start()
+            webBereich.animate().alpha(1f).setDuration(dauer).start()
+        }
+    }
+
+    // =====================================================================
+    //  Geheimer privater Tab
+    // =====================================================================
+
+    private fun oeffnePrivat() {
+        if (!Privat.wirdUnterstuetzt()) {
+            hinweis("Dein Android-System-WebView ist zu alt – bitte im Play Store aktualisieren")
+            return
+        }
+        uebersichtZu()
+        menueZu()
+        val alter = aktuellerTab
+        val tab = privatTab ?: Tab(baueWebView(privat = true), privat = true).also {
+            it.ausstehendeUrl = "start"
+            privatTab = it
+        }
+        if (alter != null && alter !== tab) alter.webView.onPause()
+        privatAktiv = true
+        setzePrivatAussehen(true)
+        // Etwas langsamer einblenden als ein normaler Tabwechsel – man merkt: jetzt ist man woanders
+        haengeEin(tab, animiert = true, dauer = 320)
+    }
+
+    /** Schließt den privaten Tab. Logins bleiben im privaten Speicher erhalten. */
+    private fun schliessePrivat(animiert: Boolean = true) {
+        val tab = privatTab ?: return
+        val warAktiv = privatAktiv
+        privatTab = null
+        privatAktiv = false
+        Privat.profil().cookieManager.flush()
+        tab.webView.apply {
+            stopLoading()
+            clearHistory()
+            (parent as? ViewGroup)?.removeView(this)
+            destroy()
+        }
+        if (warAktiv) {
+            if (tabs.isEmpty()) neuerTab(null, animiert = animiert)
+            else zeigeTab(aktiv.coerceIn(0, tabs.lastIndex), animiert)
+        }
+        setzePrivatAussehen(false)
+    }
+
+    private fun privatAllesLoeschenFragen() {
+        AlertDialog.Builder(this)
+            .setTitle("Privaten Bereich löschen?")
+            .setMessage("Alle Logins, Cookies und Website-Daten im privaten Tab werden gelöscht. Das lässt sich nicht rückgängig machen.")
+            .setPositiveButton("Löschen") { _, _ ->
+                privatTab?.webView?.clearCache(true)
+                Privat.allesLoeschen()
+                schliessePrivat()
+                hinweis("Privater Bereich gelöscht")
+            }
+            .setNegativeButton("Abbrechen", null)
+            .show()
+    }
+
+    /** Rand der Suchleiste, Screenshot-Sperre und Tastatur ohne Lernen */
+    private fun setzePrivatAussehen(an: Boolean) {
+        if (an) window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        adressFeld.setBackgroundResource(if (an) R.drawable.feld_privat_auswahl else R.drawable.feld_auswahl)
+        adresse.hint = if (an) "Privat suchen" else "Suchen oder Adresse eingeben"
+        adresse.imeOptions = if (an) EditorInfo.IME_ACTION_GO or EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+                             else EditorInfo.IME_ACTION_GO or EditorInfo.IME_FLAG_NO_EXTRACT_UI
+        if (an) {
+            // kurzes Aufleuchten des Rands beim Betreten
+            adressFeld.alpha = 0.4f
+            adressFeld.animate().alpha(1f).setDuration(320).start()
         }
     }
 
@@ -398,8 +524,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun baueWebView(): WebView {
+    private fun baueWebView(privat: Boolean = false): WebView {
         val wv = WebView(this)
+        // Der private Tab bekommt seinen eigenen, getrennten Speicher – das muss als Allererstes passieren
+        if (privat) Privat.verbinde(wv)
         wv.setBackgroundColor(ContextCompat.getColor(this, R.color.nf_bg))
         wv.settings.apply {
             javaScriptEnabled = true
@@ -411,7 +539,8 @@ class MainActivity : AppCompatActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         }
         wendeDunkelAn(wv)
-        CookieManager.getInstance().setAcceptThirdPartyCookies(wv, true)
+        val cookies = if (privat) Privat.profil().cookieManager else CookieManager.getInstance()
+        cookies.setAcceptThirdPartyCookies(wv, true)
         wv.webViewClient = NachtfalterClient()
         wv.webChromeClient = NachtfalterChrome()
         wv.setDownloadListener { url, ua, cd, mime, _ -> herunterladen(url, ua, cd, mime) }
@@ -425,7 +554,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun tabVon(view: WebView?): Tab? = tabs.firstOrNull { it.webView === view }
+    private fun tabVon(view: WebView?): Tab? =
+        privatTab?.takeIf { it.webView === view } ?: tabs.firstOrNull { it.webView === view }
 
     // =====================================================================
     //  WebView-Ereignisse
@@ -600,7 +730,7 @@ class MainActivity : AppCompatActivity() {
             karte.findViewById<TextView>(R.id.karteUrl).text = host.ifBlank { "Startseite" }
             karte.findViewById<TextView>(R.id.karteBuchstabe).text =
                 (host.firstOrNull() ?: 'N').uppercaseChar().toString()
-            karte.isActivated = i == aktiv
+            karte.isActivated = i == aktiv && !privatAktiv
             karte.setOnClickListener {
                 val idx = tabs.indexOf(tab)
                 if (idx >= 0) {
@@ -612,7 +742,7 @@ class MainActivity : AppCompatActivity() {
                 kartenListe.removeView(karte)
                 schliesseTab(tab)
                 // Markierung des aktiven Tabs neu setzen
-                for (j in 0 until kartenListe.childCount) kartenListe.getChildAt(j).isActivated = j == aktiv
+                for (j in 0 until kartenListe.childCount) kartenListe.getChildAt(j).isActivated = j == aktiv && !privatAktiv
                 if (kartenListe.childCount == 0) uebersichtZu()
             }
             kartenListe.addView(karte)
@@ -652,6 +782,11 @@ class MainActivity : AppCompatActivity() {
         eintrag(R.drawable.ic_neuladen, "Neu laden") { neuLaden() }
         eintrag(R.drawable.ic_vor, "Vorwärts", aktiviert = wv?.canGoForward() == true) { wv?.goForward() }
         eintrag(R.drawable.ic_teilen, "Teilen") { teilen() }
+        if (privatAktiv) {
+            trenner()
+            eintrag(R.drawable.ic_schliessen, "Privaten Tab schließen") { schliessePrivat() }
+            eintrag(R.drawable.ic_schild, "Privaten Bereich löschen") { privatAllesLoeschenFragen() }
+        }
         trenner()
         eintrag(R.drawable.ic_schild, "Werbeblocker", zustand = { if (werbeblockerAn) "An" else "Aus" }, schliessen = false) {
             werbeblockerAn = !werbeblockerAn
@@ -662,6 +797,7 @@ class MainActivity : AppCompatActivity() {
             dunkelAn = !dunkelAn
             prefs.edit().putBoolean("dunkel", dunkelAn).apply()
             tabs.forEach { wendeDunkelAn(it.webView) }
+            privatTab?.let { wendeDunkelAn(it.webView) }
             aktuellerTab?.webView?.reload()
         }
         eintrag(R.drawable.ic_lupe, "Suche", zustand = { SUCHMASCHINEN[suchmaschine].first }, schliessen = false) {
@@ -788,7 +924,8 @@ class MainActivity : AppCompatActivity() {
             val anfrage = DownloadManager.Request(Uri.parse(url)).apply {
                 setMimeType(mime)
                 if (ua != null) addRequestHeader("User-Agent", ua)
-                CookieManager.getInstance().getCookie(url)?.let { addRequestHeader("Cookie", it) }
+                val cookies = if (privatAktiv) Privat.profil().cookieManager else CookieManager.getInstance()
+                cookies.getCookie(url)?.let { addRequestHeader("Cookie", it) }
                 setTitle(name)
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
