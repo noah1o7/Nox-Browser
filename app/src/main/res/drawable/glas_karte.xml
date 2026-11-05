@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android" android:enterFadeDuration="200" android:exitFadeDuration="200">
-    <item android:state_activated="true" android:drawable="@drawable/glas_karte_aktiv" />
-    <item android:drawable="@drawable/glas_karte_normal" />
-</selector>

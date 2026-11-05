@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Nachtfalter-Farben -->
-    <color name="nf_bg">#FF0B0C12</color>
-    <color name="nf_flaeche">#FF161926</color>
-    <color name="nf_text">#FFECEEF5</color>
-    <color name="nf_gedaempft">#9EE4E6EE</color>
-    <color name="nf_akzent">#FFB794FF</color>
-    <color name="nf_akzent_tief">#FF8F63F0</color>
-    <color name="nf_gruen">#FF6FDC9A</color>
+    <color name="nf_bg">#FF131416</color>
+    <color name="nf_flaeche">#FF1B1C1F</color>
+    <color name="nf_flaeche_hoch">#FF26272B</color>
+    <color name="nf_rand">#FF2F3034</color>
+    <color name="nf_text">#FFE9E9E6</color>
+    <color name="nf_gedaempft">#FF9C9DA3</color>
+    <color name="nf_akzent">#FFE8A33D</color>
+    <color name="nf_akzent_tief">#FFC4852A</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>

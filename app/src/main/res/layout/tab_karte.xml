@@ -2,32 +2,32 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    android:background="@drawable/glas_karte"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/karte_grund"
     android:clickable="true"
     android:focusable="true"
     android:gravity="center_vertical"
-    android:minHeight="72dp"
+    android:minHeight="64dp"
     android:orientation="horizontal"
-    android:paddingStart="14dp"
-    android:paddingTop="12dp"
-    android:paddingEnd="6dp"
-    android:paddingBottom="12dp">
+    android:paddingStart="12dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="4dp"
+    android:paddingBottom="10dp">
 
     <TextView
         android:id="@+id/karteBuchstabe"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="@drawable/kugel_buchstabe"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@drawable/buchstabe_grund"
         android:gravity="center"
         android:textColor="@color/nf_text"
-        android:textSize="17sp"
+        android:textSize="15sp"
         android:textStyle="bold" />
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="14dp"
+        android:layout_marginStart="12dp"
         android:layout_weight="1"
         android:orientation="vertical">
 

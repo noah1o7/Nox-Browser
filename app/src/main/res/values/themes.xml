@@ -10,8 +10,8 @@
         <item name="colorOnSecondary">@color/nf_bg</item>
         <item name="colorAccent">@color/nf_akzent</item>
         <item name="colorControlActivated">@color/nf_akzent</item>
-        <item name="colorControlHighlight">#33B794FF</item>
-        <item name="android:textColorHighlight">#66B794FF</item>
+        <item name="colorControlHighlight">#1FFFFFFF</item>
+        <item name="android:textColorHighlight">#66E8A33D</item>
         <item name="android:colorBackground">@color/nf_bg</item>
         <item name="android:windowBackground">@color/nf_bg</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

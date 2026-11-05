@@ -1,6 +1,5 @@
 package de.noah.nachtfalter
 
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.Intent
@@ -18,7 +17,6 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
-import android.view.animation.OvershootInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
@@ -74,7 +72,6 @@ class MainActivity : AppCompatActivity() {
     // ---------- Oberfläche ----------
     private lateinit var wurzel: FrameLayout
     private lateinit var webBereich: FrameLayout
-    private lateinit var vorhang: VorhangView
     private lateinit var ladeLinie: View
     private lateinit var adresse: EditText
     private lateinit var schild: ImageView
@@ -90,7 +87,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var fertigKnopf: TextView
     private lateinit var menueHuelle: FrameLayout
     private lateinit var menue: LinearLayout
-    private lateinit var effektEbene: FrameLayout
+    private lateinit var hinweisEbene: FrameLayout
 
     // ---------- Zustand ----------
     private val tabs = mutableListOf<Tab>()
@@ -101,7 +98,6 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var werbeblockerAn = true
     private var dunkelAn = true
     private var suchmaschine = 0
-    private var letztesHuepfen = 0L
     private var menueOffen = false
 
     private var vollbildView: View? = null
@@ -136,7 +132,6 @@ class MainActivity : AppCompatActivity() {
 
         wurzel = findViewById(R.id.wurzel)
         webBereich = findViewById(R.id.webBereich)
-        vorhang = findViewById(R.id.vorhang)
         ladeLinie = findViewById(R.id.ladeLinie)
         adresse = findViewById(R.id.adresse)
         schild = findViewById(R.id.schild)
@@ -152,7 +147,7 @@ class MainActivity : AppCompatActivity() {
         fertigKnopf = findViewById(R.id.fertigKnopf)
         menueHuelle = findViewById(R.id.menueHuelle)
         menue = findViewById(R.id.menue)
-        effektEbene = findViewById(R.id.effektEbene)
+        hinweisEbene = findViewById(R.id.hinweisEbene)
 
         // Platz für Statusleiste, Navigationsleiste und Tastatur
         ViewCompat.setOnApplyWindowInsetsListener(wurzel) { v, insets ->
@@ -231,8 +226,6 @@ class MainActivity : AppCompatActivity() {
     // =====================================================================
 
     private fun richteLeisteEin() {
-        Animationen.drueckEffekt(zurueckKnopf, tabKnopf, menueKnopf, schild)
-
         zurueckKnopf.setOnClickListener {
             if (menueOffen) { menueZu(); return@setOnClickListener }
             val wv = aktuellerTab?.webView ?: return@setOnClickListener
@@ -249,7 +242,6 @@ class MainActivity : AppCompatActivity() {
         menueKnopf.setOnClickListener { if (menueOffen) menueZu() else menueAuf() }
         schild.setOnClickListener {
             val n = aktuellerTab?.geblockt ?: 0
-            Animationen.huepfen(schild, 1.5f)
             hinweis(if (n == 1) "1 Werbe-Element blockiert" else "$n Werbe-Elemente blockiert")
         }
 
@@ -284,23 +276,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun aktualisiereLeiste() {
         val tab = aktuellerTab ?: return
-        tabZahl.text = if (tabs.size > 99) "∞" else tabs.size.toString()
+        tabZahl.text = if (tabs.size > 99) "99+" else tabs.size.toString()
         if (!adresse.hasFocus()) adresse.setText(anzeigeText(tab))
         zurueckKnopf.alpha = if (tab.webView.canGoBack()) 1f else 0.4f
-        zeigeSchild(false)
+        zeigeSchild()
     }
 
-    private fun zeigeSchild(animiert: Boolean) {
+    private fun zeigeSchild() {
         val n = aktuellerTab?.geblockt ?: 0
         schild.visibility = if (werbeblockerAn) View.VISIBLE else View.GONE
         schildZahl.visibility = if (werbeblockerAn && n > 0) View.VISIBLE else View.GONE
         schildZahl.text = if (n > 999) "999+" else n.toString()
-        // Hüpfen höchstens alle 300 ms, sonst zappelt es bei vielen Werbe-Anfragen
-        val jetzt = System.currentTimeMillis()
-        if (animiert && jetzt - letztesHuepfen > 300) {
-            letztesHuepfen = jetzt
-            Animationen.huepfen(schild)
-        }
     }
 
     private fun zeigeFortschritt(p: Int) {
@@ -331,7 +317,9 @@ class MainActivity : AppCompatActivity() {
     private fun startUrl() = START_BASIS + "?s=" + Uri.encode(SUCHMASCHINEN[suchmaschine].second)
 
     private fun anzeigeText(tab: Tab): String {
-        val url = tab.webView.url ?: tab.ausstehendeUrl ?: return ""
+        val geladen = tab.webView.url ?: tab.ausstehendeUrl ?: return ""
+        // Die Fehlerseite ist eine data:-URL, angezeigt wird die Adresse, die nicht ging
+        val url = if (geladen.startsWith("data:")) tab.fehlerUrl ?: return "" else geladen
         if (istStart(url) || url == "start") return ""
         return Uri.parse(url).host?.removePrefix("www.") ?: url
     }
@@ -358,16 +346,14 @@ class MainActivity : AppCompatActivity() {
         tabs.add(tab)
         if (sofortZeigen) {
             zeigeTab(tabs.lastIndex, animiert)
-            Animationen.huepfen(tabZahl, 1.4f)
         }
     }
 
-    private fun zeigeTab(index: Int, animiert: Boolean = true, von: View = tabKnopf) {
+    private fun zeigeTab(index: Int, animiert: Boolean = true) {
         val alter = aktuellerTab
         aktiv = index
         val tab = tabs[index]
         if (alter != null && alter !== tab) alter.webView.onPause()
-        vorhang.sofortWeg()
 
         webBereich.removeAllViews()
         (tab.webView.parent as? ViewGroup)?.removeView(tab.webView)
@@ -381,7 +367,10 @@ class MainActivity : AppCompatActivity() {
         }
         zeigeFortschritt(tab.fortschritt)
         aktualisiereLeiste()
-        if (animiert) Animationen.blaseAus(webBereich, von)
+        if (animiert) {
+            webBereich.alpha = 0f
+            webBereich.animate().alpha(1f).setDuration(120).start()
+        }
     }
 
     private fun schliesseTab(tab: Tab) {
@@ -405,14 +394,13 @@ class MainActivity : AppCompatActivity() {
         }
         aktiv = -1
         zeigeTab(neu, animiert = false)
-        Animationen.huepfen(tabZahl, 1.4f)
         speichern()
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun baueWebView(): WebView {
         val wv = WebView(this)
-        wv.setBackgroundColor(Color.parseColor("#0b0c12"))
+        wv.setBackgroundColor(ContextCompat.getColor(this, R.color.nf_bg))
         wv.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -475,17 +463,14 @@ class MainActivity : AppCompatActivity() {
             if (tab === aktuellerTab) {
                 aktualisiereLeiste()
                 zeigeFortschritt(5)
-                if (!url.startsWith("file:") && !url.startsWith("data:") && !tab.fehlerSeiteLaedt) vorhang.zeigen()
             }
         }
 
         override fun onPageFinished(view: WebView, url: String) {
             val tab = tabVon(view) ?: return
-            if (tab.fehlerSeiteLaedt) tab.fehlerSeiteLaedt = false else tab.fehlerUrl = null
-            if (tab === aktuellerTab) {
-                vorhang.oeffnen()
-                aktualisiereLeiste()
-            }
+            if (url.startsWith("data:")) tab.fehlerSeiteLaedt = false
+            else if (!tab.fehlerSeiteLaedt) tab.fehlerUrl = null
+            if (tab === aktuellerTab) aktualisiereLeiste()
         }
 
         override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
@@ -499,7 +484,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 val tab = tabVon(view) ?: return@runOnUiThread
                 tab.geblockt++
-                if (tab === aktuellerTab) zeigeSchild(true)
+                if (tab === aktuellerTab) zeigeSchild()
             }
             return Werbeblocker.leereAntwort()
         }
@@ -519,7 +504,6 @@ class MainActivity : AppCompatActivity() {
             tab.fehlerUrl = url
             tab.fehlerSeiteLaedt = true
             view.loadDataWithBaseURL(null, html, "text/html", "utf-8", url)
-            if (tab === aktuellerTab) vorhang.oeffnen()
         }
     }
 
@@ -528,10 +512,7 @@ class MainActivity : AppCompatActivity() {
         override fun onProgressChanged(view: WebView, p: Int) {
             val tab = tabVon(view) ?: return
             tab.fortschritt = p
-            if (tab === aktuellerTab) {
-                zeigeFortschritt(p)
-                if (p >= 80) vorhang.oeffnen()
-            }
+            if (tab === aktuellerTab) zeigeFortschritt(p)
         }
 
         override fun onReceivedTitle(view: WebView, title: String?) {
@@ -603,7 +584,6 @@ class MainActivity : AppCompatActivity() {
     // =====================================================================
 
     private fun richteUebersichtEin() {
-        Animationen.drueckEffekt(neuerTabKnopf, fertigKnopf)
         fertigKnopf.setOnClickListener { uebersichtZu() }
         neuerTabKnopf.setOnClickListener {
             uebersichtZu()
@@ -619,27 +599,21 @@ class MainActivity : AppCompatActivity() {
             karte.findViewById<TextView>(R.id.karteTitel).text = tab.titel.ifBlank { "Neuer Tab" }
             karte.findViewById<TextView>(R.id.karteUrl).text = host.ifBlank { "Startseite" }
             karte.findViewById<TextView>(R.id.karteBuchstabe).text =
-                (host.firstOrNull() ?: '✦').uppercaseChar().toString()
+                (host.firstOrNull() ?: 'N').uppercaseChar().toString()
             karte.isActivated = i == aktiv
-            Animationen.drueckEffekt(karte)
             karte.setOnClickListener {
                 val idx = tabs.indexOf(tab)
                 if (idx >= 0) {
                     uebersichtZu()
-                    zeigeTab(idx, animiert = true, von = karte)
+                    zeigeTab(idx)
                 }
             }
-            val zu = karte.findViewById<View>(R.id.karteZu)
-            Animationen.drueckEffekt(zu)
-            zu.setOnClickListener {
-                if (!karte.isEnabled) return@setOnClickListener
-                Animationen.zerplatzen(karte, effektEbene) {
-                    kartenListe.removeView(karte)
-                    schliesseTab(tab)
-                    // Markierung des aktiven Tabs neu setzen
-                    for (j in 0 until kartenListe.childCount) kartenListe.getChildAt(j).isActivated = j == aktiv
-                    if (kartenListe.childCount == 0) uebersichtZu()
-                }
+            karte.findViewById<View>(R.id.karteZu).setOnClickListener {
+                kartenListe.removeView(karte)
+                schliesseTab(tab)
+                // Markierung des aktiven Tabs neu setzen
+                for (j in 0 until kartenListe.childCount) kartenListe.getChildAt(j).isActivated = j == aktiv
+                if (kartenListe.childCount == 0) uebersichtZu()
             }
             kartenListe.addView(karte)
         }
@@ -652,18 +626,7 @@ class MainActivity : AppCompatActivity() {
         uebersicht.animate().cancel()
         uebersicht.visibility = View.VISIBLE
         uebersicht.alpha = 0f
-        uebersicht.scaleX = 1f; uebersicht.scaleY = 1f
-        uebersicht.animate().setStartDelay(0).alpha(1f).setDuration(200).start()
-        // Karten steigen nacheinander wie Blasen auf
-        for (i in 0 until kartenListe.childCount) {
-            val k = kartenListe.getChildAt(i)
-            k.alpha = 0f
-            k.translationY = dp(40f)
-            k.scaleX = 0.85f; k.scaleY = 0.85f
-            k.animate().setStartDelay(40L * minOf(i, 8)).alpha(1f).translationY(0f)
-                .scaleX(1f).scaleY(1f).setDuration(380)
-                .setInterpolator(OvershootInterpolator(1.3f)).start()
-        }
+        uebersicht.animate().alpha(1f).setDuration(120).start()
         kartenScroll.post {
             val k = kartenListe.getChildAt(aktiv) ?: return@post
             kartenScroll.scrollTo(0, maxOf(0, k.top - dpi(120)))
@@ -673,11 +636,9 @@ class MainActivity : AppCompatActivity() {
     private fun uebersichtZu() {
         if (uebersicht.visibility != View.VISIBLE) return
         uebersicht.animate().cancel()
-        uebersicht.animate().setStartDelay(0).alpha(0f).scaleX(1.04f).scaleY(1.04f).setDuration(180)
-            .withEndAction {
-                uebersicht.visibility = View.GONE
-                uebersicht.scaleX = 1f; uebersicht.scaleY = 1f
-            }.start()
+        uebersicht.animate().alpha(0f).setDuration(100).withEndAction {
+            uebersicht.visibility = View.GONE
+        }.start()
     }
 
     // =====================================================================
@@ -695,7 +656,7 @@ class MainActivity : AppCompatActivity() {
         eintrag(R.drawable.ic_schild, "Werbeblocker", zustand = { if (werbeblockerAn) "An" else "Aus" }, schliessen = false) {
             werbeblockerAn = !werbeblockerAn
             prefs.edit().putBoolean("werbeblocker", werbeblockerAn).apply()
-            zeigeSchild(false)
+            zeigeSchild()
         }
         eintrag(R.drawable.ic_mond, "Websites dunkel", zustand = { if (dunkelAn) "An" else "Aus" }, schliessen = false) {
             dunkelAn = !dunkelAn
@@ -732,7 +693,7 @@ class MainActivity : AppCompatActivity() {
         }
         val bild = ImageView(this).apply {
             setImageResource(icon)
-            setColorFilter(ContextCompat.getColor(this@MainActivity, R.color.nf_akzent))
+            setColorFilter(ContextCompat.getColor(this@MainActivity, R.color.nf_gedaempft))
         }
         zeile.addView(bild, LinearLayout.LayoutParams(dpi(22), dpi(22)))
         val beschriftung = TextView(this).apply {
@@ -748,7 +709,7 @@ class MainActivity : AppCompatActivity() {
             zustandText = TextView(this).apply {
                 this.text = zustand()
                 textSize = 13f
-                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.nf_akzent))
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.nf_gedaempft))
             }
             zeile.addView(zustandText)
         }
@@ -759,67 +720,41 @@ class MainActivity : AppCompatActivity() {
                 menueZu()
             } else if (zustandText != null && zustand != null) {
                 zustandText.text = zustand()
-                Animationen.huepfen(zustandText, 1.3f)
             }
         }
         menue.addView(zeile, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpi(48)))
     }
 
     private fun trenner() {
-        val linie = View(this).apply { setBackgroundColor(Color.parseColor("#1FFFFFFF")) }
+        val linie = View(this).apply { setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.nf_rand)) }
         menue.addView(linie, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpi(1)).apply {
-            setMargins(dpi(14), dpi(4), dpi(14), dpi(4))
+            setMargins(0, dpi(4), 0, dpi(4))
         })
-    }
-
-    /** ☰ dreht sich zu ✕ (offen) bzw. zurück zu ☰ (zu) */
-    private fun menueSymbol(offen: Boolean) {
-        menueKnopf.animate().cancel()
-        menueKnopf.animate().setStartDelay(0).rotation(90f).setDuration(110)
-            .setInterpolator(DecelerateInterpolator()).withEndAction {
-                menueKnopf.setImageResource(if (offen) R.drawable.ic_schliessen else R.drawable.ic_menue)
-                menueKnopf.rotation = -90f
-                menueKnopf.animate().setStartDelay(0).rotation(0f).setDuration(260)
-                    .setInterpolator(OvershootInterpolator(2f)).start()
-            }.start()
     }
 
     private fun menueAuf() {
         if (menueOffen) return
         menueOffen = true
         tastaturWeg()
-        menueSymbol(true)
+        menueKnopf.setImageResource(R.drawable.ic_schliessen)
         baueMenue()
         menueHuelle.animate().cancel()
+        menue.animate().cancel()
         menueHuelle.visibility = View.VISIBLE
         menueHuelle.alpha = 0f
-        menueHuelle.animate().setStartDelay(0).alpha(1f).setDuration(180).start()
+        menueHuelle.animate().alpha(1f).setDuration(120).start()
         menue.alpha = 0f
-        menue.scaleX = 0.2f; menue.scaleY = 0.2f
-        menue.post {
-            // Die Menü-Blase quillt aus dem ☰-Knopf unten rechts
-            menue.pivotX = menue.width - dp(28f)
-            menue.pivotY = menue.height + dp(36f)
-            menue.animate().setStartDelay(0).scaleX(1f).scaleY(1f).alpha(1f).setDuration(380)
-                .setInterpolator(OvershootInterpolator(1.2f)).start()
-            for (i in 0 until menue.childCount) {
-                val kind = menue.getChildAt(i)
-                kind.alpha = 0f
-                kind.translationY = dp(12f)
-                kind.animate().setStartDelay(60L + i * 25L).alpha(1f).translationY(0f)
-                    .setDuration(260).start()
-            }
-        }
+        menue.translationY = dp(8f)
+        menue.animate().alpha(1f).translationY(0f).setDuration(140)
+            .setInterpolator(DecelerateInterpolator()).start()
     }
 
     private fun menueZu() {
         if (!menueOffen) return
         menueOffen = false
-        menueSymbol(false)
-        menue.animate().cancel()
+        menueKnopf.setImageResource(R.drawable.ic_menue)
         menueHuelle.animate().cancel()
-        menue.animate().setStartDelay(0).scaleX(0.3f).scaleY(0.3f).alpha(0f).setDuration(160).start()
-        menueHuelle.animate().setStartDelay(0).alpha(0f).setDuration(180).withEndAction {
+        menueHuelle.animate().alpha(0f).setDuration(100).withEndAction {
             menueHuelle.visibility = View.GONE
         }.start()
     }
@@ -859,7 +794,7 @@ class MainActivity : AppCompatActivity() {
                 setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
             }
             (getSystemService(DOWNLOAD_SERVICE) as DownloadManager).enqueue(anfrage)
-            hinweis("⬇  $name wird geladen")
+            hinweis("$name wird geladen")
         } catch (e: Exception) {
             hinweis("Download fehlgeschlagen")
         }
@@ -869,8 +804,7 @@ class MainActivity : AppCompatActivity() {
     //  Updates von GitHub
     // =====================================================================
 
-    private var updateBlase: View? = null
-    private var updatePuls: ValueAnimator? = null
+    private var updateMeldung: View? = null
     private var updateDownloadId = -1L
     private var wartendeUpdateDatei: File? = null
 
@@ -888,74 +822,60 @@ class MainActivity : AppCompatActivity() {
                 if (isFinishing || isDestroyed) return@runOnUiThread
                 prefs.edit().putLong("updatePruefung", System.currentTimeMillis()).apply()
                 when {
-                    neu != null -> zeigeUpdateBlase(neu)
-                    !leise -> hinweis("Nachtfalter ${eigeneVersion()} ist aktuell ✓")
+                    neu != null -> zeigeUpdateMeldung(neu)
+                    !leise -> hinweis("Nachtfalter ${eigeneVersion()} ist aktuell")
                 }
             }
         }.start()
     }
 
-    /** Lila Blase steigt aus der Leiste auf und schwebt sanft, bis man sie antippt */
-    private fun zeigeUpdateBlase(neu: Updater.NeueVersion) {
+    /** Bleibt über der Leiste stehen, bis man sie antippt oder schließt */
+    private fun zeigeUpdateMeldung(neu: Updater.NeueVersion) {
         if (updateDownloadId != -1L) return
-        updatePuls?.cancel()
-        updateBlase?.let { effektEbene.removeView(it) }
-        val blase = LinearLayout(this).apply {
+        updateMeldung?.let { hinweisEbene.removeView(it) }
+        val meldung = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setBackgroundResource(R.drawable.glas_pille_lila)
-            setPadding(dpi(20), dpi(10), dpi(6), dpi(10))
+            setBackgroundResource(R.drawable.hinweis_grund)
+            setPadding(dpi(14), dpi(8), dpi(4), dpi(8))
             isClickable = true
         }
         val text = TextView(this).apply {
-            this.text = "✨  Nachtfalter ${neu.version} ist da\nTippen zum Aktualisieren"
+            this.text = "Nachtfalter ${neu.version} ist verfügbar\nTippen zum Aktualisieren"
             textSize = 14f
             setTextColor(ContextCompat.getColor(this@MainActivity, R.color.nf_text))
             setLineSpacing(0f, 1.15f)
         }
-        blase.addView(text, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        meldung.addView(text, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         val zu = ImageButton(this).apply {
             setImageResource(R.drawable.ic_schliessen)
             setBackgroundResource(R.drawable.ripple_rund)
             contentDescription = "Später"
         }
-        blase.addView(zu, LinearLayout.LayoutParams(dpi(40), dpi(40)))
-        effektEbene.addView(blase, FrameLayout.LayoutParams(
+        meldung.addView(zu, LinearLayout.LayoutParams(dpi(40), dpi(40)))
+        hinweisEbene.addView(meldung, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM
-        ).apply { leftMargin = dpi(16); rightMargin = dpi(16); bottomMargin = dpi(86) })
-        updateBlase = blase
+        ).apply { leftMargin = dpi(8); rightMargin = dpi(8); bottomMargin = dpi(64) })
+        updateMeldung = meldung
 
-        blase.alpha = 0f
-        blase.translationY = dp(70f)
-        blase.scaleX = 0.5f; blase.scaleY = 0.5f
-        blase.animate().alpha(1f).translationY(0f).scaleX(1f).scaleY(1f).setDuration(560)
-            .setInterpolator(OvershootInterpolator(1.4f)).withEndAction {
-                updatePuls = ValueAnimator.ofFloat(0f, 1f).apply {
-                    duration = 1400
-                    repeatMode = ValueAnimator.REVERSE
-                    repeatCount = ValueAnimator.INFINITE
-                    addUpdateListener { blase.translationY = -dp(4f) * (it.animatedValue as Float) }
-                    start()
-                }
-            }.start()
-        Animationen.drueckEffekt(blase)
+        meldung.alpha = 0f
+        meldung.animate().alpha(1f).setDuration(150).start()
 
-        blase.setOnClickListener {
+        meldung.setOnClickListener {
             if (updateDownloadId != -1L) return@setOnClickListener
             text.text = "Lädt Nachtfalter ${neu.version} …"
             ladeUpdate(neu, text)
         }
         zu.setOnClickListener {
-            if (updateDownloadId == -1L) updateBlaseWeg()
+            if (updateDownloadId == -1L) updateMeldungWeg()
         }
     }
 
-    private fun updateBlaseWeg() {
-        val blase = updateBlase ?: return
-        updateBlase = null
-        updatePuls?.cancel(); updatePuls = null
-        blase.animate().alpha(0f).translationY(dp(50f)).scaleX(0.7f).scaleY(0.7f).setDuration(260)
-            .withEndAction { effektEbene.removeView(blase) }.start()
+    private fun updateMeldungWeg() {
+        val meldung = updateMeldung ?: return
+        updateMeldung = null
+        meldung.animate().alpha(0f).setDuration(120)
+            .withEndAction { hinweisEbene.removeView(meldung) }.start()
     }
 
     private fun ladeUpdate(neu: Updater.NeueVersion, text: TextView) {
@@ -1023,37 +943,34 @@ class MainActivity : AppCompatActivity() {
                 setDataAndType(uri, "application/vnd.android.package-archive")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             })
-            updateBlaseWeg()
+            updateMeldungWeg()
         } catch (e: Exception) {
             hinweis("Installation konnte nicht gestartet werden")
         }
     }
 
     // =====================================================================
-    //  Hinweis-Blase (statt grauer Android-Toasts)
+    //  Kurze Hinweise
     // =====================================================================
 
     private fun hinweis(text: String) {
-        val blase = TextView(this).apply {
+        val meldung = TextView(this).apply {
             this.text = text
             textSize = 14f
             gravity = Gravity.CENTER
             setTextColor(ContextCompat.getColor(this@MainActivity, R.color.nf_text))
-            setBackgroundResource(R.drawable.glas_pille)
-            setPadding(dpi(20), dpi(12), dpi(20), dpi(12))
+            setBackgroundResource(R.drawable.hinweis_grund)
+            setPadding(dpi(16), dpi(10), dpi(16), dpi(10))
         }
-        effektEbene.addView(blase, FrameLayout.LayoutParams(
+        hinweisEbene.addView(meldung, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
             Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-        ).apply { bottomMargin = dpi(92) })
-        blase.alpha = 0f
-        blase.scaleX = 0.5f; blase.scaleY = 0.5f
-        blase.translationY = dp(20f)
-        blase.animate().alpha(1f).scaleX(1f).scaleY(1f).translationY(0f).setDuration(380)
-            .setInterpolator(OvershootInterpolator(1.6f)).start()
-        blase.postDelayed({
-            blase.animate().alpha(0f).translationY(-dp(30f)).scaleX(0.9f).scaleY(0.9f).setDuration(320)
-                .withEndAction { effektEbene.removeView(blase) }.start()
+        ).apply { bottomMargin = dpi(68) })
+        meldung.alpha = 0f
+        meldung.animate().alpha(1f).setDuration(120).start()
+        meldung.postDelayed({
+            meldung.animate().alpha(0f).setDuration(150)
+                .withEndAction { hinweisEbene.removeView(meldung) }.start()
         }, 2200)
     }
 }

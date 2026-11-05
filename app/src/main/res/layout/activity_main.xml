@@ -15,38 +15,29 @@
         android:layout_marginBottom="@dimen/leiste_platz"
         android:background="@color/nf_bg" />
 
-    <!-- Glasvorhang beim Laden -->
-    <de.noah.nachtfalter.VorhangView
-        android:id="@+id/vorhang"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="@dimen/leiste_platz" />
-
-    <!-- Leuchtende Lade-Linie über der Leiste -->
+    <!-- Ladefortschritt direkt über der Leiste -->
     <View
         android:id="@+id/ladeLinie"
         android:layout_width="match_parent"
-        android:layout_height="3dp"
+        android:layout_height="2dp"
         android:layout_gravity="bottom"
         android:layout_marginBottom="@dimen/leiste_platz"
         android:background="@drawable/lade_linie"
         android:visibility="invisible" />
 
-    <!-- Werkzeugleiste unten: Liquid-Glass-Pille -->
+    <!-- Werkzeugleiste. Die Elevation hält sie über dem Menü, damit der Menüknopf es wieder schließen kann. -->
     <LinearLayout
         android:id="@+id/leiste"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="@dimen/leiste_platz"
         android:layout_gravity="bottom"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="8dp"
-        android:background="@drawable/glas_leiste"
-        android:elevation="8dp"
+        android:background="@drawable/leiste_grund"
+        android:elevation="1dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="6dp"
-        android:paddingEnd="6dp">
+        android:outlineProvider="none"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp">
 
         <ImageButton
             android:id="@+id/zurueckKnopf"
@@ -59,7 +50,7 @@
         <LinearLayout
             android:id="@+id/adressFeld"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="40dp"
             android:layout_marginStart="4dp"
             android:layout_marginEnd="4dp"
             android:layout_weight="1"
@@ -72,19 +63,19 @@
 
             <ImageView
                 android:id="@+id/schild"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
                 android:contentDescription="Werbeblocker"
-                android:src="@drawable/ic_schild_gruen" />
+                android:src="@drawable/ic_schild"
+                android:tint="@color/nf_gedaempft" />
 
             <TextView
                 android:id="@+id/schildZahl"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="3dp"
-                android:textColor="@color/nf_gruen"
+                android:textColor="@color/nf_gedaempft"
                 android:textSize="11sp"
-                android:textStyle="bold"
                 android:visibility="gone" />
 
             <EditText
@@ -117,11 +108,14 @@
 
             <TextView
                 android:id="@+id/tabZahl"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="wrap_content"
+                android:layout_height="22dp"
                 android:layout_gravity="center"
                 android:background="@drawable/tab_zaehler"
                 android:gravity="center"
+                android:minWidth="22dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:text="1"
                 android:textColor="@color/nf_text"
                 android:textSize="12sp"
@@ -142,7 +136,7 @@
         android:id="@+id/uebersicht"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/uebersicht_grund"
+        android:background="@color/nf_bg"
         android:clickable="true"
         android:elevation="10dp"
         android:focusable="false"
@@ -156,12 +150,12 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingStart="22dp"
-                android:paddingTop="22dp"
+                android:paddingStart="16dp"
+                android:paddingTop="16dp"
                 android:paddingBottom="12dp"
                 android:text="Tabs"
                 android:textColor="@color/nf_text"
-                android:textSize="28sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <ScrollView
@@ -185,44 +179,41 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
                 android:orientation="horizontal"
-                android:padding="14dp">
-
-                <TextView
-                    android:id="@+id/neuerTabKnopf"
-                    android:layout_width="wrap_content"
-                    android:layout_height="52dp"
-                    android:background="@drawable/glas_pille_lila"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:paddingStart="26dp"
-                    android:paddingEnd="26dp"
-                    android:text="＋  Neuer Tab"
-                    android:textColor="@color/nf_text"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                android:padding="16dp">
 
                 <TextView
                     android:id="@+id/fertigKnopf"
-                    android:layout_width="wrap_content"
-                    android:layout_height="52dp"
-                    android:layout_marginStart="12dp"
-                    android:background="@drawable/glas_pille"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/knopf_sekundaer"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
-                    android:paddingStart="26dp"
-                    android:paddingEnd="26dp"
                     android:text="Fertig"
                     android:textColor="@color/nf_text"
                     android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/neuerTabKnopf"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/knopf_primaer"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="Neuer Tab"
+                    android:textColor="@color/nf_bg"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
     </FrameLayout>
 
-    <!-- Menü: abgedunkelter Hintergrund + Glas-Blase (liegt UNTER der Leiste, damit ☰ wieder schließen kann) -->
+    <!-- Menü mit abgedunkeltem Hintergrund -->
     <FrameLayout
         android:id="@+id/menueHuelle"
         android:layout_width="match_parent"
@@ -234,24 +225,23 @@
 
         <LinearLayout
             android:id="@+id/menue"
-            android:layout_width="268dp"
+            android:layout_width="264dp"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
-            android:layout_marginEnd="12dp"
-            android:layout_marginBottom="78dp"
-            android:background="@drawable/glas_menue"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="64dp"
+            android:background="@drawable/menue_grund"
             android:clickable="true"
-            android:elevation="12dp"
+            android:elevation="6dp"
             android:orientation="vertical"
             android:paddingTop="8dp"
             android:paddingBottom="8dp" />
     </FrameLayout>
 
-    <!-- Ebene für Effekte (Glasperlen, Hinweis-Blasen) -->
+    <!-- Ebene für Hinweise und die Update-Meldung -->
     <FrameLayout
-        android:id="@+id/effektEbene"
+        android:id="@+id/hinweisEbene"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:elevation="30dp"
-        android:clipChildren="false" />
+        android:elevation="30dp" />
 </FrameLayout>

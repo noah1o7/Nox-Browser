@@ -1,5 +1,5 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "apk": "https://raw.githubusercontent.com/noah1o7/nachtfalter-android/main/updates/Nachtfalter.apk",
-  "notizen": "Updates direkt aus der App · ☰ schließt das Menü beim zweiten Druck · Tab-Übersicht über der Leiste · fester Nachtfalter-Schlüssel"
+  "notizen": "Neues Design: ruhige Graphit-Oberfläche, Akzentfarbe Bernstein, schlichte Ladeanzeige statt Vorhang · Fehlerseiten zeigen in der Tab-Übersicht die richtige Adresse · Signierter Release-Build"
 }

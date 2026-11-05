@@ -21,8 +21,8 @@ android {
         applicationId = "de.noah.nachtfalter"
         minSdk = 26
         targetSdk = 37
-        versionCode = 3
-        versionName = "0.2.0"
+        versionCode = 4
+        versionName = "0.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -43,9 +43,10 @@ android {
             if (schluesselDatei.exists()) signingConfig = signingConfigs.getByName("nachtfalter")
         }
         release {
+            if (schluesselDatei.exists()) signingConfig = signingConfigs.getByName("nachtfalter")
+            // R8 bleibt aus: mit packageScope stürzte die App beim Start ab (IllegalAccessError in kotlin.collections)
             optimization {
-                enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+                enable = false
             }
         }
     }
