@@ -41,7 +41,7 @@
 
 Du musst Nox nur **ein einziges Mal** installieren. Danach meldet sich die App von selbst, sobald es eine neue Version gibt – einmal antippen, und das Update wird geladen und installiert. Von Hand geht's über **☰ → Nach Updates suchen**.
 
-Alle bisherigen Versionen findest du unter [Releases](https://github.com/noah1o7/nachtfalter-android/releases).
+Was sich in jeder Version geändert hat, steht in der [Versionsgeschichte](https://github.com/noah1o7/nachtfalter-android/commits/main).
 
 ## 🔒 Datenschutz
 
@@ -67,7 +67,7 @@ Nox ist eine native Android-App in **Kotlin** auf Basis von Android-WebView. Öf
 1. `versionCode` und `versionName` in `app/build.gradle.kts` hochzählen
 2. `./gradlew assembleRelease` ausführen (signiert mit dem Nox-Schlüssel, der **nicht** in diesem Repo liegt)
 3. APK als `updates/Nachtfalter.apk` ablegen und in `updates/version.json` die neue Version eintragen – die App findet das Update von selbst
-4. Auf GitHub ein Release `vX.Y.Z` anlegen und die APK als `Nox-X.Y.Z.apk` anhängen
+4. Optional: auf GitHub ein Release `vX.Y.Z` anlegen und die APK als `Nox-X.Y.Z.apk` anhängen
 
 Die interne App-Kennung bleibt `de.noah.nachtfalter`, damit Updates über bestehende Installationen funktionieren.
 
