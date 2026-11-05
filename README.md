@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://raw.githubusercontent.com/noah1o7/nachtfalter-android/main/updates/Nachtfalter.apk">
+  <a href="https://raw.githubusercontent.com/noah1o7/Nox-Browser/main/updates/Nachtfalter.apk">
     <img src="docs/herunterladen.svg" alt="Nox für Android herunterladen" height="52">
   </a>
 </p>
@@ -41,7 +41,7 @@
 
 Du musst Nox nur **ein einziges Mal** installieren. Danach meldet sich die App von selbst, sobald es eine neue Version gibt – einmal antippen, und das Update wird geladen und installiert. Von Hand geht's über **☰ → Nach Updates suchen**.
 
-Was sich in jeder Version geändert hat, steht in der [Versionsgeschichte](https://github.com/noah1o7/nachtfalter-android/commits/main).
+Was sich in jeder Version geändert hat, steht in der [Versionsgeschichte](https://github.com/noah1o7/Nox-Browser/commits/main).
 
 ## 🔒 Datenschutz
 

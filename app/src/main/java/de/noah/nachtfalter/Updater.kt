@@ -6,13 +6,13 @@ import java.net.URL
 
 /**
  * Schaut auf GitHub nach, ob es eine neuere Nox-Version gibt.
- * Neue Versionen liegen im Ordner "updates" von github.com/noah1o7/nachtfalter-android:
+ * Neue Versionen liegen im Ordner "updates" von github.com/noah1o7/Nox-Browser:
  *   updates/version.json  -> {"version": "0.2.0", "apk": "<Link zur APK>", "notizen": "..."}
  *   updates/Nachtfalter.apk
  */
 object Updater {
 
-    private const val ADRESSE = "https://raw.githubusercontent.com/noah1o7/nachtfalter-android/main/updates/version.json"
+    private const val ADRESSE = "https://raw.githubusercontent.com/noah1o7/Nox-Browser/main/updates/version.json"
 
     data class NeueVersion(val version: String, val apkUrl: String, val notizen: String)
 
